@@ -17,7 +17,6 @@ export interface WardSetting {
   id: string;
   wardCode: string;
   wardName: string;
-  nursingNeedType: 1 | 2;
 }
 
 /* ===== ユーティリティ ===== */

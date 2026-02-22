@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Plus, Trash2, FileText, Calendar, Check, Loader2 } from 'lucide-react';
+import { Building2, FileText, Calendar, Check, Loader2 } from 'lucide-react';
 import type { UploadedFile, EvaluationMethod, WardSetting } from './SetupStep';
 
 /* ===== Step 2: 病棟設定 & 確認・生成 ===== */
@@ -12,6 +12,8 @@ interface WardConfirmStepProps {
   title: string;
   periodFrom: string;
   periodTo: string;
+  /** ファイルから抽出された病棟コード一覧 */
+  extractedWardCodes: string[];
   wards: WardSetting[];
   onWardsChange: (w: WardSetting[]) => void;
   onBack: () => void;
@@ -25,6 +27,7 @@ export function WardConfirmStep({
   title,
   periodFrom,
   periodTo,
+  extractedWardCodes,
   wards,
   onWardsChange,
   onBack,
@@ -34,26 +37,10 @@ export function WardConfirmStep({
   const [isComplete, setIsComplete] = useState(false);
 
   const evaluationLabel = evaluationMethod === 'necessity_1' ? '看護必要度 Ⅰ' : '看護必要度 Ⅱ';
-  const canGenerate = wards.length > 0 && wards.every((w) => w.wardCode.trim() !== '');
+  const canGenerate = wards.length > 0;
 
-  function addWard() {
-    onWardsChange([
-      ...wards,
-      {
-        id: crypto.randomUUID(),
-        wardCode: '',
-        wardName: '',
-        nursingNeedType: evaluationMethod === 'necessity_1' ? 1 : 2,
-      },
-    ]);
-  }
-
-  function updateWard(id: string, field: keyof WardSetting, value: string | number) {
-    onWardsChange(wards.map((w) => (w.id === id ? { ...w, [field]: value } : w)));
-  }
-
-  function removeWard(id: string) {
-    onWardsChange(wards.filter((w) => w.id !== id));
+  function updateWardName(wardCode: string, name: string) {
+    onWardsChange(wards.map((w) => (w.wardCode === wardCode ? { ...w, wardName: name } : w)));
   }
 
   async function handleConfirm() {
@@ -128,58 +115,43 @@ export function WardConfirmStep({
             <Building2 size={14} className="text-text-muted" />
             病棟設定
           </h3>
-          <button onClick={addWard} className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/8">
-            <Plus size={13} /> 追加
-          </button>
+          <span className="text-xs text-text-muted">{extractedWardCodes.length} 病棟検出</span>
         </div>
 
         <div className="p-5">
-          {wards.length === 0 ? (
+          {extractedWardCodes.length === 0 ? (
             <div className="flex flex-col items-center rounded-xl border border-dashed border-border py-8 text-center">
               <Building2 size={24} className="text-text-muted/40 mb-1.5" />
-              <p className="text-sm text-text-muted">「追加」ボタンから病棟を登録してください</p>
-              <p className="text-xs text-text-muted mt-1">Hファイルから抽出した病棟コードを設定します</p>
+              <p className="text-sm text-text-muted">ファイルから病棟コードが検出されませんでした</p>
+              <p className="text-xs text-text-muted mt-1">H/EFファイルに病棟コードが含まれているか確認してください</p>
             </div>
           ) : (
             <div className="space-y-2">
+              <p className="text-xs text-text-muted mb-3">
+                H/EFファイルから検出された病棟コードです。必要に応じて病棟名称を入力してください（任意）。
+              </p>
               {wards.map((ward, i) => (
-                <div key={ward.id} className="rounded-xl border border-border p-3">
-                  <div className="flex items-start gap-2.5">
-                    <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
-                    <div className="flex-1 grid grid-cols-3 gap-2.5">
+                <div key={ward.wardCode} className="rounded-xl border border-border p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent/10 text-xs font-bold text-accent">{i + 1}</span>
+                    <div className="flex-1 grid grid-cols-2 gap-3">
                       <div>
                         <label className="mb-0.5 block text-[11px] font-medium text-text-muted">病棟コード</label>
-                        <input
-                          type="text" value={ward.wardCode}
-                          onChange={(e) => updateWard(ward.id, 'wardCode', e.target.value)}
-                          placeholder="W001"
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
-                        />
+                        <div className="rounded-lg border border-border bg-background/50 px-2.5 py-1.5 text-sm font-mono text-text-primary">
+                          {ward.wardCode}
+                        </div>
                       </div>
                       <div>
-                        <label className="mb-0.5 block text-[11px] font-medium text-text-muted">病棟名称</label>
+                        <label className="mb-0.5 block text-[11px] font-medium text-text-muted">病棟名称（任意）</label>
                         <input
-                          type="text" value={ward.wardName}
-                          onChange={(e) => updateWard(ward.id, 'wardName', e.target.value)}
-                          placeholder="3階東病棟"
+                          type="text"
+                          value={ward.wardName}
+                          onChange={(e) => updateWardName(ward.wardCode, e.target.value)}
+                          placeholder="例: 3階東病棟"
                           className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
                         />
-                      </div>
-                      <div>
-                        <label className="mb-0.5 block text-[11px] font-medium text-text-muted">必要度</label>
-                        <select
-                          value={ward.nursingNeedType}
-                          onChange={(e) => updateWard(ward.id, 'nursingNeedType', parseInt(e.target.value))}
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
-                        >
-                          <option value={1}>Ⅰ</option>
-                          <option value={2}>Ⅱ</option>
-                        </select>
                       </div>
                     </div>
-                    <button onClick={() => removeWard(ward.id)} className="mt-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-danger/10 hover:text-danger">
-                      <Trash2 size={14} />
-                    </button>
                   </div>
                 </div>
               ))}

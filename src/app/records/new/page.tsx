@@ -8,11 +8,12 @@ import { StepIndicator } from '@/components/records/StepIndicator';
 import { SetupStep } from '@/components/records/SetupStep';
 import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
+import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
-  { label: '病棟設定・生成', description: '病棟コード設定・レコード生成' },
+  { label: '病棟設定・生成', description: '病棟コード確認・レコード生成' },
 ];
 
 export default function NewRecordPage() {
@@ -28,7 +29,27 @@ export default function NewRecordPage() {
   const [periodTo, setPeriodTo] = useState('');
 
   // Step 2 state
+  const [extractedWardCodes, setExtractedWardCodes] = useState<string[]>([]);
   const [wards, setWards] = useState<WardSetting[]>([]);
+
+  // Step 1 → Step 2: ファイルから病棟コードを抽出して遷移
+  const handleNextToStep2 = useCallback(async () => {
+    const codes = await extractWardCodes(
+      hFile?.file ?? null,
+      efFile?.file ?? null
+    );
+    setExtractedWardCodes(codes);
+
+    // 抽出した病棟コードからWardSettingを初期化（前回入力した名称を保持）
+    const existingMap = new Map(wards.map((w) => [w.wardCode, w]));
+    const newWards: WardSetting[] = codes.map((code) => ({
+      id: existingMap.get(code)?.id ?? crypto.randomUUID(),
+      wardCode: code,
+      wardName: existingMap.get(code)?.wardName ?? '',
+    }));
+    setWards(newWards);
+    setCurrentStep(2);
+  }, [hFile, efFile, wards]);
 
   const handleConfirm = useCallback(async () => {
     await recordRepository.create({
@@ -40,14 +61,14 @@ export default function NewRecordPage() {
       wards: wards.map((w) => ({
         wardCode: w.wardCode,
         wardName: w.wardName,
-        nursingNeedType: w.nursingNeedType,
+        nursingNeedType: evaluationMethod === 'necessity_1' ? 1 : 2,
       })),
     });
 
     setTimeout(() => {
       router.push('/');
     }, 1500);
-  }, [title, periodFrom, periodTo, hFile, efFile, wards, router]);
+  }, [title, periodFrom, periodTo, hFile, efFile, wards, evaluationMethod, router]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,7 +104,7 @@ export default function NewRecordPage() {
             onPeriodFromChange={setPeriodFrom}
             periodTo={periodTo}
             onPeriodToChange={setPeriodTo}
-            onNext={() => setCurrentStep(2)}
+            onNext={handleNextToStep2}
           />
         )}
 
@@ -95,6 +116,7 @@ export default function NewRecordPage() {
             title={title}
             periodFrom={periodFrom}
             periodTo={periodTo}
+            extractedWardCodes={extractedWardCodes}
             wards={wards}
             onWardsChange={setWards}
             onBack={() => setCurrentStep(1)}
