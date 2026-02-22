@@ -32,6 +32,35 @@ async function countLines(file: File): Promise<number> {
   return text.split('\n').filter((l) => l.trim().length > 0).length;
 }
 
+/* ===== バリデーション ===== */
+const ALLOWED_EXTENSIONS = ['.txt', '.csv', '.tsv'];
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+
+interface FileValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+function validateFile(file: File): FileValidationResult {
+  // 拡張子チェック
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return { valid: false, error: `対応していないファイル形式です（${ext}）。.txt, .csv, .tsv のみ対応しています` };
+  }
+
+  // サイズチェック
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `ファイルサイズが大きすぎます（${formatFileSize(file.size)}）。100MB以下のファイルを選択してください` };
+  }
+
+  // 空ファイルチェック（0バイト）
+  if (file.size === 0) {
+    return { valid: false, error: 'ファイルが空です。データが含まれるファイルを選択してください' };
+  }
+
+  return { valid: true };
+}
+
 /* ===== ファイルドロップゾーン ===== */
 function FileDropZone({
   label,
@@ -45,10 +74,28 @@ function FileDropZone({
   onRemove: () => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFile = useCallback(
     async (f: File) => {
+      setError(null);
+
+      // バリデーション
+      const validation = validateFile(f);
+      if (!validation.valid) {
+        setError(validation.error ?? 'ファイルの検証に失敗しました');
+        return;
+      }
+
+      // 行数カウント
       const lines = await countLines(f);
+
+      // 空ファイルチェック（内容あるが有効行0行）
+      if (lines === 0) {
+        setError('ファイルにデータ行がありません。有効なデータを含むファイルを選択してください');
+        return;
+      }
+
       onFileSelect({ file: f, name: f.name, size: formatFileSize(f.size), lineCount: lines });
     },
     [onFileSelect]
@@ -64,6 +111,11 @@ function FileDropZone({
     [handleFile]
   );
 
+  const handleRemove = useCallback(() => {
+    setError(null);
+    onRemove();
+  }, [onRemove]);
+
   if (file) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 p-3.5">
@@ -75,7 +127,7 @@ function FileDropZone({
           <p className="text-xs text-text-muted">{file.size} · {file.lineCount?.toLocaleString() ?? '-'} 行</p>
         </div>
         <button
-          onClick={onRemove}
+          onClick={handleRemove}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-danger"
         >
           <X size={14} />
@@ -85,23 +137,34 @@ function FileDropZone({
   }
 
   return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-      onDragLeave={() => setIsDragging(false)}
-      onDrop={handleDrop}
-      className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
-        isDragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50 hover:bg-surface-hover'
-      }`}
-    >
-      <input
-        type="file"
-        className="absolute inset-0 cursor-pointer opacity-0"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-        accept=".txt,.csv,.tsv"
-      />
-      <Upload size={20} className={`mb-1.5 ${isDragging ? 'text-accent' : 'text-text-muted'}`} />
-      <p className="text-sm text-text-secondary">{label}</p>
-      <p className="text-[11px] text-text-muted mt-0.5">ドラッグ＆ドロップ または クリック</p>
+    <div>
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
+          error
+            ? 'border-danger/50 bg-danger/5'
+            : isDragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50 hover:bg-surface-hover'
+        }`}
+      >
+        <input
+          type="file"
+          className="absolute inset-0 cursor-pointer opacity-0"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+          accept=".txt,.csv,.tsv"
+        />
+        <Upload size={20} className={`mb-1.5 ${error ? 'text-danger' : isDragging ? 'text-accent' : 'text-text-muted'}`} />
+        <p className={`text-sm ${error ? 'text-danger' : 'text-text-secondary'}`}>{label}</p>
+        <p className="text-[11px] text-text-muted mt-0.5">ドラッグ＆ドロップ または クリック</p>
+        <p className="text-[11px] text-text-muted">.txt / .csv / .tsv（100MB以下）</p>
+      </div>
+      {error && (
+        <p className="mt-1.5 flex items-start gap-1 text-xs text-danger">
+          <AlertCircle size={12} className="shrink-0 mt-0.5" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
