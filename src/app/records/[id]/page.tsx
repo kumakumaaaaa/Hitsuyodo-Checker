@@ -200,17 +200,17 @@ export default function RecordDetailPage() {
   const isCompareDisabled = record?.evaluation_method !== 'necessity_1';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <main className="flex-1 flex flex-col min-h-0 mx-auto w-full max-w-7xl">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32">
+          <div className="flex flex-col items-center justify-center py-32 flex-1">
             <Loader2 size={32} className="animate-spin text-accent mb-3" />
             <p className="text-sm text-text-secondary">読み込み中...</p>
           </div>
         ) : !record ? (
-          <div className="flex flex-col items-center justify-center py-32">
+          <div className="flex flex-col items-center justify-center py-32 flex-1">
             <AlertTriangle size={32} className="text-text-muted/40 mb-3" />
             <p className="text-sm font-medium text-text-secondary">レコードが見つかりません</p>
             <button
@@ -222,57 +222,64 @@ export default function RecordDetailPage() {
           </div>
         ) : (
           <>
-            {/* ヘッダー部 */}
-            <div className="mb-6">
+            {/* レコードヘッダー（完全固定表示） */}
+            <div className="shrink-0 bg-background border-b border-border px-4 sm:px-6 py-4">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-3"
+                className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-2"
               >
                 <ArrowLeft size={16} />
                 レコード一覧に戻る
               </button>
-              <h1 className="text-xl font-bold text-text-primary">{record.title}</h1>
-              <p className="mt-1 text-sm text-text-muted">
-                {record.period_from} 〜 {record.period_to} ・ {record.wards.length} 病棟
-              </p>
+              <div className="flex items-end justify-between">
+                <div>
+                  <h1 className="text-xl font-bold text-text-primary">{record.title}</h1>
+                  <p className="mt-0.5 text-sm text-text-muted">
+                    {record.period_from} 〜 {record.period_to} ・ {record.wards.length} 病棟
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* タブバー */}
-            <div className="border-b border-border mb-6">
-              <nav className="flex gap-1 -mb-px">
-                {TABS.map((tab) => {
-                  const disabled = tab.id === 'compare' && isCompareDisabled;
-                  const isActive = activeTab === tab.id;
+            {/* サイドバー + コンテンツ（個別スクロール） */}
+            <div className="flex-1 flex min-h-0">
+              {/* サイドバーナビゲーション */}
+              <nav className="w-56 shrink-0 border-r border-border overflow-y-auto px-3 py-5" style={{ backgroundColor: '#f1f5f9' }}>
+                <div className="space-y-1">
+                  {TABS.map((tab) => {
+                    const disabled = tab.id === 'compare' && isCompareDisabled;
+                    const isActive = activeTab === tab.id;
 
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => !disabled && setActiveTab(tab.id)}
-                      disabled={disabled}
-                      title={disabled ? 'この画面は看護必要度Ⅰが選択されている場合のみ閲覧できます' : undefined}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                        isActive
-                          ? 'border-accent text-accent'
-                          : disabled
-                            ? 'border-transparent text-text-muted/40 cursor-not-allowed'
-                            : 'border-transparent text-text-muted hover:text-text-primary hover:border-border'
-                      }`}
-                    >
-                      {tab.icon}
-                      {tab.label}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => !disabled && setActiveTab(tab.id)}
+                        disabled={disabled}
+                        title={disabled ? 'この画面は看護必要度Ⅰが選択されている場合のみ閲覧できます' : undefined}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
+                          isActive
+                            ? 'bg-accent/10 text-accent'
+                            : disabled
+                              ? 'text-text-muted/30 cursor-not-allowed'
+                              : 'text-text-muted hover:bg-background hover:text-text-primary'
+                        }`}
+                      >
+                        {tab.icon}
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </nav>
-            </div>
 
-            {/* タブコンテンツ */}
-            <div className="animate-slide-up">
-              {activeTab === 'overview' && <OverviewTab record={record} />}
-              {activeTab === 'criteria' && <PlaceholderTab title="基準割合" icon={<BarChart3 size={40} />} />}
-              {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
-              {activeTab === 'analysis' && <PlaceholderTab title="分析" icon={<TrendingUp size={40} />} />}
-              {activeTab === 'compare' && <PlaceholderTab title="看護必要度 Ⅰ・Ⅱ 比較" icon={<GitCompareArrows size={40} />} />}
+              {/* コンテンツエリア */}
+              <div id="record-detail-content" className="flex-1 min-w-0 overflow-y-auto px-6 py-6 animate-slide-up">
+                {activeTab === 'overview' && <OverviewTab record={record} />}
+                {activeTab === 'criteria' && <PlaceholderTab title="基準割合" icon={<BarChart3 size={40} />} />}
+                {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
+                {activeTab === 'analysis' && <PlaceholderTab title="分析" icon={<TrendingUp size={40} />} />}
+                {activeTab === 'compare' && <PlaceholderTab title="看護必要度 Ⅰ・Ⅱ 比較" icon={<GitCompareArrows size={40} />} />}
+              </div>
             </div>
           </>
         )}
