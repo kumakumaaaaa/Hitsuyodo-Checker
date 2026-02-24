@@ -27,14 +27,14 @@ import {
 type TabId = 'overview' | 'criteria' | 'detail' | 'analysis' | 'compare';
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; disabled?: boolean }[] = [
-  { id: 'overview', label: 'ファイル取り込み状況', icon: <FileText size={16} /> },
-  { id: 'criteria', label: '基準割合', icon: <BarChart3 size={16} /> },
+  { id: 'overview', label: 'レコード取り込み設定', icon: <FileText size={16} /> },
+  { id: 'criteria', label: '該当患者割合', icon: <BarChart3 size={16} /> },
   { id: 'detail', label: '看護必要度詳細', icon: <ClipboardList size={16} /> },
-  { id: 'analysis', label: '分析', icon: <TrendingUp size={16} /> },
-  { id: 'compare', label: 'Ⅰ・Ⅱ比較', icon: <GitCompareArrows size={16} /> },
+  { id: 'analysis', label: 'ABC項目別分析', icon: <TrendingUp size={16} /> },
+  { id: 'compare', label: '看護必要度Ⅰ・Ⅱ比較分析', icon: <GitCompareArrows size={16} /> },
 ];
 
-/* ===== Tab 1: ファイル取り込み状況 ===== */
+/* ===== Tab 1: レコード取り込み設定 ===== */
 function OverviewTab({ record }: { record: RecordDetail }) {
   const evaluationLabel = record.evaluation_method === 'necessity_1' ? '看護必要度 Ⅰ' : '看護必要度 Ⅱ';
 
@@ -255,7 +255,7 @@ export default function RecordDetailPage() {
                         key={tab.id}
                         onClick={() => !disabled && setActiveTab(tab.id)}
                         disabled={disabled}
-                        title={disabled ? 'この画面は看護必要度Ⅰが選択されている場合のみ閲覧できます' : undefined}
+                        title={disabled ? '看護必要度Ⅰを選択された場合のみ閲覧可' : undefined}
                         className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${
                           isActive
                             ? 'bg-accent/10 text-accent'
@@ -275,10 +275,10 @@ export default function RecordDetailPage() {
               {/* コンテンツエリア */}
               <div id="record-detail-content" className="flex-1 min-w-0 overflow-y-auto px-6 py-6 animate-slide-up">
                 {activeTab === 'overview' && <OverviewTab record={record} />}
-                {activeTab === 'criteria' && <PlaceholderTab title="基準割合" icon={<BarChart3 size={40} />} />}
+                {activeTab === 'criteria' && <PlaceholderTab title="該当患者割合" icon={<BarChart3 size={40} />} />}
                 {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
-                {activeTab === 'analysis' && <PlaceholderTab title="分析" icon={<TrendingUp size={40} />} />}
-                {activeTab === 'compare' && <PlaceholderTab title="看護必要度 Ⅰ・Ⅱ 比較" icon={<GitCompareArrows size={40} />} />}
+                {activeTab === 'analysis' && <PlaceholderTab title="ABC項目別分析" icon={<TrendingUp size={40} />} />}
+                {activeTab === 'compare' && <PlaceholderTab title="看護必要度Ⅰ・Ⅱ比較分析" icon={<GitCompareArrows size={40} />} />}
               </div>
             </div>
           </>
