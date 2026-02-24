@@ -22,40 +22,48 @@
 ```mermaid
 erDiagram
 
-    %% ==================
-    %% マスタ系
-    %% ==================
+    %% ==============================
+    %% Layer 1: マスタ系（判定ロジック）
+    %% ==============================
 
     judgment_pattern_master {
         int id PK
         string code "判定パターンコード（P1〜P7）"
-        string label "画面表示用の条件説明（例：A>=3 or C>=1）"
+        string label "条件説明（例：A>=3 or C>=1）"
         timestamp created_at
         timestamp updated_at
     }
 
     admission_type_master {
         int id PK
-        string name "入院料名称（例：急性期一般入院料1）"
-        string category "区分（general / icu / hcu / rehabilitation）"
+        string name "入院料名称"
+        string category "区分（general/icu/hcu/rehab）"
         timestamp created_at
         timestamp updated_at
     }
 
     admission_type_criteria {
         int id PK
-        int admission_type_id FK "入院料マスタへの参照"
-        int judgment_pattern_id FK "判定パターンマスタへの参照"
-        string criteria_no "基準番号（例：基準①、基準②）"
-        decimal threshold_rate "重症該当患者割合の閾値（%）NULLable"
+        int admission_type_id FK
+        int judgment_pattern_id FK
+        string criteria_no "基準番号（基準①等）"
+        decimal threshold_rate "閾値 %（NULLable）"
     }
+
+    %% リレーション: 判定パターン ↔ 入院料
+    admission_type_master ||--o{ admission_type_criteria : "has"
+    judgment_pattern_master ||--o{ admission_type_criteria : "used by"
+
+    %% ==============================
+    %% Layer 1: マスタ系（加算）
+    %% ==============================
 
     kasan_master {
         int id PK
         string code "加算コード"
         string name "加算名称"
-        int judgment_pattern_id FK "判定パターンマスタへの参照"
-        decimal threshold_rate "看護必要度割合の閾値（%）"
+        int judgment_pattern_id FK
+        decimal threshold_rate "閾値 %"
         date effective_from
         date effective_to
         timestamp created_at
@@ -64,37 +72,46 @@ erDiagram
 
     kasan_exclusion_rule {
         int id PK
-        int kasan_id_a FK "加算Aのid"
-        int kasan_id_b FK "加算Bのid"
-        string note "排他理由メモ"
+        int kasan_id_a FK
+        int kasan_id_b FK
+        string note "排他理由"
     }
+
+    %% リレーション: 判定パターン → 加算
+    judgment_pattern_master ||--o{ kasan_master : "used by"
+    kasan_master ||--o{ kasan_exclusion_rule : "excl A"
+    kasan_master ||--o{ kasan_exclusion_rule : "excl B"
+
+    %% ==============================
+    %% Layer 1: マスタ系（コードマスタ）
+    %% ==============================
 
     general_ward_ac_item_code_master {
         int id PK
         string category "A or C"
-        int item_no "項目番号（例：A1, C15）"
-        string sub_item "子項目識別（A6の①〜⑪等。なければNULL）"
+        int item_no "項目番号"
+        string sub_item "子項目（NULLable）"
         string item_name "項目名称"
-        string receipt_code "レセプト電算コード（9桁）"
+        string receipt_code "レセプト電算コード 9桁"
         string procedure_name "診療行為名称"
-        boolean level1_only "必要度Ⅰのみ適用フラグ"
-        date effective_from "適用開始日"
-        date effective_to "適用終了日（NULL=現行）"
+        boolean level1_only "Iのみフラグ"
+        date effective_from
+        date effective_to
     }
 
-    %% ==================
-    %% レコード系
-    %% ==================
+    %% ==============================
+    %% Layer 2: レコード系
+    %% ==============================
 
     record {
         int id PK
-        string title "タイトル（自動生成・編集可）"
-        date period_from "対象期間 開始年月"
-        date period_to "対象期間 終了年月"
-        string evaluation_method "評価方式（necessity_1 / necessity_2）"
-        string h_file_name "アップロードHファイル名"
-        string ef_file_name "アップロードEFファイル名"
-        string status "処理状態（pending / processing / done / error）"
+        string title "タイトル"
+        date period_from "対象期間 開始"
+        date period_to "対象期間 終了"
+        string evaluation_method "necessity_1 or necessity_2"
+        string h_file_name "Hファイル名"
+        string ef_file_name "EFファイル名"
+        string status "pending/processing/done/error"
         timestamp created_at
         timestamp updated_at
     }
@@ -102,46 +119,58 @@ erDiagram
     ward_setting {
         int id PK
         int record_id FK
-        string ward_code "病棟コード（H/EFファイルから自動抽出）"
-        string ward_name "病棟名称（任意・ユーザー入力）"
-        int admission_type_id FK "紐付ける入院料（NULLable）"
+        string ward_code "病棟コード（自動抽出）"
+        string ward_name "病棟名称（任意）"
+        int admission_type_id FK "入院料（NULLable）"
     }
 
     ward_kasan_setting {
         int id PK
         int ward_setting_id FK
-        int kasan_id FK "適用する加算"
+        int kasan_id FK
     }
 
-    %% ==================
-    %% データ系（HF・EFから取り込み）
-    %% ==================
+    %% リレーション: レコード → 病棟設定
+    record ||--o{ ward_setting : "has"
+    ward_setting ||--o{ ward_kasan_setting : "has"
+
+    %% リレーション: マスタ → 病棟設定
+    admission_type_master ||--o{ ward_setting : "assigned to"
+    kasan_master ||--o{ ward_kasan_setting : "applied to"
+
+    %% ==============================
+    %% Layer 3: データ系（取込データ）
+    %% ==============================
 
     patient {
         int id PK
         int record_id FK
         string patient_no "患者番号"
-        string ward_code "在籍病棟コード"
+        string ward_code "病棟コード"
         date admission_date "入院日"
-        date discharge_date "退院日（NULL=在院中）"
+        date discharge_date "退院日（NULLable）"
     }
 
     daily_nursing_evaluation {
         int id PK
         int patient_id FK
         date eval_date "評価日"
-        int a_score_total "A項目合計スコア"
-        jsonb a_scores_detail "A項目個別スコア（例：{a1:2, a2:1, ...}）"
-        int b_score_total "B項目合計スコア"
-        jsonb b_scores_detail "B項目個別スコア"
-        int c_score "C項目スコア（0 or 1）"
-        string c_receipt_code "該当レセプト電算コード（NULLの場合は非該当）"
-        boolean is_severe "重症該当フラグ（入院料基準による）"
+        int a_score_total "A項目合計"
+        jsonb a_scores_detail "A項目個別"
+        int b_score_total "B項目合計"
+        jsonb b_scores_detail "B項目個別"
+        int c_score "C項目（0 or 1）"
+        string c_receipt_code "該当レセプト電算コード"
+        boolean is_severe "重症該当フラグ"
     }
 
-    %% ==================
-    %% ユーザー系（将来用・初版スコープ外）
-    %% ==================
+    %% リレーション: レコード → 患者 → 日次評価
+    record ||--o{ patient : "has"
+    patient ||--o{ daily_nursing_evaluation : "has"
+
+    %% ==============================
+    %% Layer 4: ユーザー系（将来用）
+    %% ==============================
 
     users {
         int id PK
@@ -150,25 +179,6 @@ erDiagram
         string password_hash
         timestamp created_at
     }
-
-    %% ==================
-    %% リレーション
-    %% ==================
-
-    judgment_pattern_master ||--o{ admission_type_criteria : "1パターンは複数の入院料基準に使われる"
-    admission_type_master ||--o{ admission_type_criteria : "1入院料は複数の判定基準を持つ"
-    admission_type_master ||--o{ ward_setting : "1つの入院料は複数の病棟設定に紐付く"
-    judgment_pattern_master ||--o{ kasan_master : "1パターンは複数の加算に使われる"
-    kasan_master ||--o{ ward_kasan_setting : "1つの加算は複数の病棟に適用される"
-    kasan_master ||--o{ kasan_exclusion_rule : "排他ルールの対象加算A"
-    kasan_master ||--o{ kasan_exclusion_rule : "排他ルールの対象加算B"
-    general_ward_ac_item_code_master ||--o{ daily_nursing_evaluation : "A・C項目コードが評価レコードに紐付く"
-
-    record ||--o{ ward_setting : "1レコードは複数病棟設定を持つ"
-    record ||--o{ patient : "1レコードは複数患者を持つ"
-    ward_setting ||--o{ ward_kasan_setting : "1病棟設定は複数加算を持つ"
-
-    patient ||--o{ daily_nursing_evaluation : "1患者は複数日の評価を持つ"
 ```
 
 ---
