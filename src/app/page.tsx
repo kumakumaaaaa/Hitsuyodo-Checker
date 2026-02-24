@@ -52,8 +52,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleRowClick = (id: number) => {
-    // フェーズ3: レコード詳細画面への遷移
-    console.log('レコード詳細画面へ遷移 (フェーズ3で実装):', id);
+    router.push(`/records/${id}`);
   };
 
   const handleCreateClick = () => {

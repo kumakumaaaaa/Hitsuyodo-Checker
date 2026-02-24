@@ -63,12 +63,13 @@ export default function NewRecordPage() {
       title: title || `${periodFrom}分`,
       periodFrom: `${periodFrom}-01`,
       periodTo: `${periodTo}-01`,
+      evaluationMethod,
       hFileName: hFile?.name ?? '',
       efFileName: efFile?.name ?? '',
       wards: wards.map((w) => ({
         wardCode: w.wardCode,
         wardName: w.wardName,
-        nursingNeedType: evaluationMethod === 'necessity_1' ? 1 : 2,
+        admissionTypeId: w.admissionTypeId,
       })),
     });
 

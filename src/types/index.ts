@@ -64,3 +64,27 @@ export interface WardSetting {
   admission_type_id: number;
   nursing_need_type: 1 | 2;
 }
+
+/** 病棟設定（詳細画面用、入院料名付き） */
+export interface WardSettingDetail {
+  id: number;
+  ward_code: string;
+  ward_name: string;
+  admission_type_id: number | null;
+  admission_type_name: string | null;
+}
+
+/** レコード詳細（詳細画面用） */
+export interface RecordDetail {
+  id: number;
+  title: string;
+  period_from: string;
+  period_to: string;
+  evaluation_method: string;
+  h_file_name: string | null;
+  ef_file_name: string | null;
+  status: RecordStatus;
+  created_at: string;
+  updated_at: string;
+  wards: WardSettingDetail[];
+}

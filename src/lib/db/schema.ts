@@ -1,5 +1,5 @@
 /**
- * ER図 v0.3 に基づくテーブル定義
+ * ER図 v0.5 に基づくテーブル定義
  * CREATE IF NOT EXISTS で冪等に実行可能
  */
 export const schema = `
@@ -48,6 +48,7 @@ export const schema = `
     title TEXT NOT NULL,
     period_from DATE,
     period_to DATE,
+    evaluation_method TEXT NOT NULL DEFAULT 'necessity_1' CHECK (evaluation_method IN ('necessity_1', 'necessity_2')),
     h_file_name TEXT,
     ef_file_name TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'error')),
@@ -59,9 +60,8 @@ export const schema = `
     id SERIAL PRIMARY KEY,
     record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
     ward_code TEXT NOT NULL,
-    ward_name TEXT,
-    admission_type_id INTEGER REFERENCES admission_type_master(id),
-    nursing_need_type INTEGER CHECK (nursing_need_type IN (1, 2))
+    ward_name TEXT NOT NULL,
+    admission_type_id INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS ward_kasan_setting (
