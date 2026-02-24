@@ -8,7 +8,7 @@ import {
   getAdmissionType,
   getCriteriaByAdmissionType,
   getJudgmentPattern,
-  getAdmissionTypesByCategory,
+  getAllCategoriesWithTypes,
 } from '@/lib/master-data/admission-type-data';
 
 interface SettingsModalProps {
@@ -25,7 +25,7 @@ function WardDefaultsTab() {
     setDefaults(getWardDefaults());
   }, []);
 
-  const groupedAdmissionTypes = getAdmissionTypesByCategory();
+  const groupedAdmissionTypes = getAllCategoriesWithTypes();
 
   const addRow = useCallback(() => {
     setDefaults((prev) => [

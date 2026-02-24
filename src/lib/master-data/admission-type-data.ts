@@ -32,28 +32,31 @@ export const ADMISSION_CATEGORY_LABELS: Record<AdmissionCategory, string> = {
   rehabilitation: 'リハビリ',
 };
 
+export type EvaluationType = 'GENERAL_I' | 'GENERAL_II' | 'ICU' | 'HCU' | 'REHABILITATION';
+
 /* ===== 入院料マスタ ===== */
 
 export interface AdmissionType {
   id: number;
   name: string;
   category: AdmissionCategory;
+  targetEvaluationTypes: EvaluationType[];
 }
 
 export const ADMISSION_TYPES: AdmissionType[] = [
   // 一般病棟入院基本料（急性期一般入院料1は難易度が高い為一旦除外）
 
-  { id: 2, name: '急性期一般入院料2', category: 'general' },
-  { id: 3, name: '急性期一般入院料3', category: 'general' },
-  { id: 4, name: '急性期一般入院料4', category: 'general' },
-  { id: 5, name: '急性期一般入院料5', category: 'general' },
-  { id: 6, name: '急性期一般入院料6', category: 'general' },
-  { id: 7, name: '地域一般入院料1', category: 'general' },
+  { id: 2, name: '急性期一般入院料2', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 3, name: '急性期一般入院料3', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 4, name: '急性期一般入院料4', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 5, name: '急性期一般入院料5', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 6, name: '急性期一般入院料6', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 7, name: '地域一般入院料1', category: 'general', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
   // 地域包括ケア病棟入院料
-  { id: 8, name: '地域包括ケア病棟入院料1', category: 'community_care' },
-  { id: 9, name: '地域包括ケア病棟入院料2', category: 'community_care' },
-  { id: 10, name: '地域包括ケア病棟入院料3', category: 'community_care' },
-  { id: 11, name: '地域包括ケア病棟入院料4', category: 'community_care' },
+  { id: 8, name: '地域包括ケア病棟入院料1', category: 'community_care', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 9, name: '地域包括ケア病棟入院料2', category: 'community_care', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 10, name: '地域包括ケア病棟入院料3', category: 'community_care', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
+  { id: 11, name: '地域包括ケア病棟入院料4', category: 'community_care', targetEvaluationTypes: ['GENERAL_I', 'GENERAL_II'] },
 ];
 
 /* ===== 入院料 × 判定基準 ===== */
@@ -112,8 +115,8 @@ export function getAdmissionTypePatternsLabel(admissionTypeId: number): string {
 }
 
 /** カテゴリでグループ化した入院料一覧を取得 */
-export function getAdmissionTypesByCategory(): { category: AdmissionCategory; label: string; types: AdmissionType[] }[] {
-  const categories = [...new Set(ADMISSION_TYPES.map((a) => a.category))];
+export function getAllCategoriesWithTypes(): { category: AdmissionCategory; label: string; types: AdmissionType[] }[] {
+  const categories = Array.from(new Set(ADMISSION_TYPES.map((a) => a.category)));
   return categories.map((cat) => ({
     category: cat,
     label: ADMISSION_CATEGORY_LABELS[cat],

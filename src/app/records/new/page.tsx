@@ -9,6 +9,8 @@ import { SetupStep } from '@/components/records/SetupStep';
 import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
+import { processHFile } from '@/lib/file-parser/h-parser';
+import { processEfFile } from '@/lib/file-parser/ef-parser';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 
@@ -73,6 +75,20 @@ export default function NewRecordPage() {
           admissionTypeId: w.admissionTypeId,
         })),
       });
+
+      // ファイルのパースとDB保存（バルクインサート）
+      if (hFile?.file) {
+        await processHFile(recordId, hFile.file);
+      }
+      if (efFile?.file) {
+        await processEfFile(recordId, efFile.file);
+      }
+
+      // H/EFの生データが保存された直後、対象患者と病棟期間に対する「評価票の受け皿」を一括生成する
+      const { generateEvaluationReceivers } = await import('@/lib/evaluations/receiver-generator');
+      await generateEvaluationReceivers(recordId);
+
+      // TODO: レコードステータスを processing または done に更新する処理を追加
 
       setTimeout(() => {
         router.push(`/records/${recordId}`);

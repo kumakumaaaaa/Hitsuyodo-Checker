@@ -8,7 +8,7 @@ import {
   getAdmissionType,
   getCriteriaByAdmissionType,
   getJudgmentPattern,
-  getAdmissionTypesByCategory,
+  getAllCategoriesWithTypes,
 } from '@/lib/master-data/admission-type-data';
 import { getWardDefaults, saveWardDefaults, type WardDefault } from '@/lib/settings/ward-defaults';
 
@@ -50,7 +50,7 @@ export function WardConfirmStep({
   const allWardsHaveAdmission = wards.every((w) => w.admissionTypeId !== null);
   const canGenerate = wards.length > 0 && allWardsNamed && allWardsHaveAdmission;
 
-  const groupedAdmissionTypes = getAdmissionTypesByCategory();
+  const groupedAdmissionTypes = getAllCategoriesWithTypes();
 
   function updateWard(wardCode: string, updates: Partial<WardSetting>) {
     onWardsChange(wards.map((w) => (w.wardCode === wardCode ? { ...w, ...updates } : w)));

@@ -63,11 +63,13 @@ function validateFile(file: File): FileValidationResult {
 
 /* ===== ファイルドロップゾーン ===== */
 function FileDropZone({
+  id,
   label,
   file,
   onFileSelect,
   onRemove,
 }: {
+  id?: string;
   label: string;
   file: UploadedFile | null;
   onFileSelect: (file: UploadedFile) => void;
@@ -138,6 +140,7 @@ function FileDropZone({
 
   return (
     <div 
+      id={id}
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
       onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
       onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
@@ -289,11 +292,11 @@ export function SetupStep({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">Hファイル</p>
-            <FileDropZone label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
+            <FileDropZone id="h-file-dropzone" label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
           </div>
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">EFファイル</p>
-            <FileDropZone label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
+            <FileDropZone id="ef-file-dropzone" label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
           </div>
         </div>
       </section>

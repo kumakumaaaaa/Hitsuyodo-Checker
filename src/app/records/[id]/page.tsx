@@ -136,9 +136,14 @@ function OverviewTab({ record }: { record: RecordDetail }) {
           )}
         </div>
       </div>
+
+      {/* デバッグ用: 生成された受け皿リスト */}
+      <DebugReceivers recordId={record.id} />
     </div>
   );
 }
+
+import { DebugReceivers } from '@/components/records/DebugReceivers';
 
 /* ===== ヘルパーコンポーネント ===== */
 function InfoRow({ label, value, icon, accent }: { label: string; value: string; icon?: React.ReactNode; accent?: boolean }) {
