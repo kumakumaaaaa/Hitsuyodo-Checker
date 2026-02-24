@@ -10,6 +10,7 @@ import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
+import { getWardDefault } from '@/lib/settings/ward-defaults';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -40,14 +41,19 @@ export default function NewRecordPage() {
     );
     setExtractedWardCodes(codes);
 
-    // 抽出した病棟コードからWardSettingを初期化（前回入力した名称を保持）
+    // 抽出した病棟コードからWardSettingを初期化
+    // 前回入力した値を保持、なければデフォルト設定を適用
     const existingMap = new Map(wards.map((w) => [w.wardCode, w]));
-    const newWards: WardSetting[] = codes.map((code) => ({
-      id: existingMap.get(code)?.id ?? crypto.randomUUID(),
-      wardCode: code,
-      wardName: existingMap.get(code)?.wardName ?? '',
-      admissionTypeId: existingMap.get(code)?.admissionTypeId ?? null,
-    }));
+    const newWards: WardSetting[] = codes.map((code) => {
+      const existing = existingMap.get(code);
+      const wardDefault = getWardDefault(code);
+      return {
+        id: existing?.id ?? crypto.randomUUID(),
+        wardCode: code,
+        wardName: existing?.wardName ?? wardDefault?.wardName ?? '',
+        admissionTypeId: existing?.admissionTypeId ?? wardDefault?.admissionTypeId ?? null,
+      };
+    });
     setWards(newWards);
     setCurrentStep(2);
   }, [hFile, efFile, wards]);
