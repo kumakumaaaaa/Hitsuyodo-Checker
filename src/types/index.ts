@@ -88,3 +88,24 @@ export interface RecordDetail {
   updated_at: string;
   wards: WardSettingDetail[];
 }
+
+/** Hファイル 生データ */
+export interface HRecord {
+  id: number;
+  record_id: number;
+  patient_no: string;
+  payload_type: string;
+  eval_date: string | null;
+  payload_data: any;
+}
+
+/** EFファイル 診療行為 生データ */
+export interface EfMedicalAct {
+  id: number;
+  record_id: number;
+  patient_no: string;
+  ward_code: string | null;
+  eval_date: string;
+  receipt_code: string;
+  data_class: string | null;
+}

@@ -83,6 +83,27 @@ export const schema = `
     discharge_date DATE
   );
 
+  -- Hファイルのペイロードデータ（B項目など）を格納する raw テーブル
+  CREATE TABLE IF NOT EXISTS h_record (
+    id SERIAL PRIMARY KEY,
+    record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
+    patient_no TEXT NOT NULL,
+    payload_type TEXT NOT NULL, -- 例: 'ASS0021'
+    eval_date DATE,             -- 評価日（ペイロードに連動）
+    payload_data JSONB          -- ペイロードの生データ（B項目の配列など）
+  );
+
+  -- EFファイルの診療行為（レセプトコード）を格納する raw テーブル
+  CREATE TABLE IF NOT EXISTS ef_medical_act (
+    id SERIAL PRIMARY KEY,
+    record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
+    patient_no TEXT NOT NULL,
+    ward_code TEXT,
+    eval_date DATE NOT NULL,
+    receipt_code TEXT NOT NULL, -- レセプト電算コード
+    data_class TEXT             -- データ区分（31, 32...注射など、A3判定に利用）
+  );
+
   CREATE TABLE IF NOT EXISTS daily_nursing_evaluation (
     id SERIAL PRIMARY KEY,
     patient_id INTEGER NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
@@ -95,6 +116,16 @@ export const schema = `
     c_receipt_code TEXT,
     is_severe BOOLEAN DEFAULT FALSE
   );
+
+  -- ==================
+  -- インデックス
+  -- ==================
+  CREATE INDEX IF NOT EXISTS idx_patient_record_id ON patient(record_id);
+  CREATE INDEX IF NOT EXISTS idx_h_record_record_id ON h_record(record_id);
+  CREATE INDEX IF NOT EXISTS idx_h_record_patient_no ON h_record(patient_no);
+  CREATE INDEX IF NOT EXISTS idx_ef_medical_act_record_id ON ef_medical_act(record_id);
+  CREATE INDEX IF NOT EXISTS idx_ef_medical_act_patient_no ON ef_medical_act(patient_no);
+  CREATE INDEX IF NOT EXISTS idx_ef_medical_act_receipt_code ON ef_medical_act(receipt_code);
 
   -- ==================
   -- 既存IndexedDB環境向けのマイグレーション (v0.5対応)
