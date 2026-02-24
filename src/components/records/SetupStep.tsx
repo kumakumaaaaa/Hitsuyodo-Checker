@@ -137,11 +137,13 @@ function FileDropZone({
   }
 
   return (
-    <div>
+    <div 
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleDrop(e); }}
+    >
       <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
         className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
           error
             ? 'border-danger/50 bg-danger/5'
@@ -260,14 +262,22 @@ export function SetupStep({
           <input
             type="month"
             value={periodFrom}
-            onChange={(e) => onPeriodFromChange(e.target.value)}
+            max="2099-12"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodFromChange(val);
+            }}
             className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           />
           <span className="text-text-muted text-sm">〜</span>
           <input
             type="month"
             value={periodTo}
-            onChange={(e) => onPeriodToChange(e.target.value)}
+            max="2099-12"
+            onChange={(e) => {
+              const val = e.target.value;
+              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodToChange(val);
+            }}
             className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           />
         </div>
