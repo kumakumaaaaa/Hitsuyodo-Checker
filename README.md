@@ -78,6 +78,34 @@ http://localhost:3000 でアプリケーションにアクセスできます。
 └── public/
 ```
 
+## 開発者向けトラブルシューティング
+
+本システムは **PGlite（ブラウザ内PostgreSQL）** を利用し、データはすべて **IndexedDB** に永続化（保存）されます。
+そのため、開発中にデータベースのスキーマ（テーブル構造）を変更した場合、過去のテーブル構造がブラウザに残存し、エラーを引き起こす罠（罠）があります。
+
+**よくあるエラーの例:**
+- `column "xxx" does not exist` (新しく追加したカラムがない)
+- `there is no unique or exclusion constraint matching the ON CONFLICT specification` (古いテーブルにUNIQUE制約がない)
+- `null value in column "xxx" violates not-null constraint` (使わなくなった古いNOT NULLカラムが残っている)
+
+**対処法（マイグレーション）:**
+スキーマ変更を行う場合は、単に `CREATE TABLE` を書き換えるのではなく、`src/lib/db/schema.ts` の末尾に以下のようなマイグレーションクエリ（`ALTER TABLE`）を必ず追記して、既存のクライアントのデータベース構造もアップデートされるようにしてください。
+
+```sql
+-- カラムの追加
+ALTER TABLE target_table ADD COLUMN IF NOT EXISTS new_column TEXT;
+
+-- 不要なカラムの削除（制約エラー回避のため必須）
+ALTER TABLE target_table DROP COLUMN IF EXISTS old_column;
+
+-- UNIQUE制約の再定義（DROPしてからADDする）
+ALTER TABLE target_table DROP CONSTRAINT IF EXISTS target_table_col1_col2_key;
+ALTER TABLE target_table ADD CONSTRAINT target_table_col1_col2_key UNIQUE (col1, col2);
+```
+
+**開発中の初期化（DBリセット）:**
+開発中にブラウザのDBを完全にリセットしたい場合は、ブラウザの開発者ツールから `Application` タブ > `Storage` > `Clear site data` を実行するか、専用のリセット関数 (`resetDB()`) を呼び出してください。
+
 ## 対応ブラウザ
 
 - Google Chrome（最新版）

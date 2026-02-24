@@ -14,6 +14,7 @@ export const schema = `
     nursing_need_type INTEGER NOT NULL CHECK (nursing_need_type IN (1, 2)),
     threshold_rate DECIMAL(5, 2),
     evaluation_method TEXT,
+    target_evaluation_type JSONB,
     effective_from DATE,
     effective_to DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -80,7 +81,8 @@ export const schema = `
     patient_no TEXT NOT NULL,
     ward_code TEXT,
     admission_date DATE,
-    discharge_date DATE
+    discharge_date DATE,
+    UNIQUE(record_id, patient_no)
   );
 
   -- Hファイルのペイロードデータ（B項目など）を格納する raw テーブル
@@ -106,15 +108,21 @@ export const schema = `
 
   CREATE TABLE IF NOT EXISTS daily_nursing_evaluation (
     id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
+    record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
+    ward_code TEXT NOT NULL,
+    patient_no TEXT NOT NULL,
     eval_date DATE NOT NULL,
-    a_score_total INTEGER DEFAULT 0,
-    a_scores_detail JSONB,
-    b_score_total INTEGER DEFAULT 0,
-    b_scores_detail JSONB,
+    evaluation_type TEXT NOT NULL,
+    a_items JSONB,
+    b_items JSONB,
+    c_items JSONB,
+    a_score INTEGER DEFAULT 0,
+    b_score INTEGER DEFAULT 0,
     c_score INTEGER DEFAULT 0,
-    c_receipt_code TEXT,
-    is_severe BOOLEAN DEFAULT FALSE
+    is_met_criteria BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(record_id, ward_code, patient_no, eval_date)
   );
 
   -- ==================
@@ -135,4 +143,33 @@ export const schema = `
   -- statusカラムの制約を一度削除して再作成 ('draft' を許可するため)
   ALTER TABLE record DROP CONSTRAINT IF EXISTS record_status_check;
   ALTER TABLE record ADD CONSTRAINT record_status_check CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error'));
+
+  -- ==================
+  -- 既存IndexedDB環境向けのマイグレーション (v0.7対応: 評価票受け皿とマスターの拡張)
+  -- ==================
+  ALTER TABLE admission_type_master ADD COLUMN IF NOT EXISTS target_evaluation_type JSONB;
+  
+  ALTER TABLE patient ADD COLUMN IF NOT EXISTS ward_code TEXT;
+  ALTER TABLE patient ADD COLUMN IF NOT EXISTS admission_date DATE;
+  ALTER TABLE patient ADD COLUMN IF NOT EXISTS discharge_date DATE;
+  ALTER TABLE ef_medical_act ADD COLUMN IF NOT EXISTS ward_code TEXT;
+
+  -- 以前のバージョンの daily_nursing_evaluation テーブルがあれば拡張する
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS record_id INTEGER;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS ward_code TEXT;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS patient_no TEXT;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS evaluation_type TEXT;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS a_items JSONB;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS b_items JSONB;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS c_items JSONB;
+
+  -- 古いスキーマ（v0.5以前）で使われていたが現在は不要となったカラムを削除する
+  ALTER TABLE daily_nursing_evaluation DROP COLUMN IF EXISTS patient_id;
+
+  -- ON CONFLICT エラーを防ぐため、既存のテーブルに対して UNIQUE 制約を再定義する
+  ALTER TABLE patient DROP CONSTRAINT IF EXISTS patient_record_id_patient_no_key;
+  ALTER TABLE patient ADD CONSTRAINT patient_record_id_patient_no_key UNIQUE (record_id, patient_no);
+
+  ALTER TABLE daily_nursing_evaluation DROP CONSTRAINT IF EXISTS daily_nursing_evaluation_record_id_ward_code_patient_no_e_key;
+  ALTER TABLE daily_nursing_evaluation ADD CONSTRAINT daily_nursing_evaluation_record_id_ward_code_patient_no_e_key UNIQUE (record_id, ward_code, patient_no, eval_date);
 `;

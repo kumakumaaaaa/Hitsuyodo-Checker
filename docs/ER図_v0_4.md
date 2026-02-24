@@ -39,6 +39,7 @@ erDiagram
         int id PK
         string name "入院料名称"
         string category "区分（general/icu/hcu/rehab）"
+        jsonb target_evaluation_type "対象評価票種別（I/II）"
         timestamp created_at
         timestamp updated_at
     }
@@ -165,22 +166,48 @@ erDiagram
         date discharge_date "退院日（NULLable）"
     }
 
-    daily_nursing_evaluation {
+    h_record {
         int id PK
-        int patient_id FK
+        int record_id FK
+        string patient_no "患者番号"
+        string payload_type "ASS0021等"
         date eval_date "評価日"
-        int a_score_total "A項目合計"
-        jsonb a_scores_detail "A項目個別"
-        int b_score_total "B項目合計"
-        jsonb b_scores_detail "B項目個別"
-        int c_score "C項目（0 or 1）"
-        string c_receipt_code "該当レセプト電算コード"
-        boolean is_severe "重症該当フラグ"
+        jsonb payload_data "生データ"
     }
 
-    %% リレーション: レコード → 患者 → 日次評価
+    ef_medical_act {
+        int id PK
+        int record_id FK
+        string patient_no "患者番号"
+        string ward_code "病棟コード"
+        date eval_date "評価日"
+        string receipt_code "レセプト電算コード"
+        string data_class "データ区分"
+    }
+
+    daily_nursing_evaluation {
+        int id PK
+        int record_id FK
+        string ward_code "病棟コード"
+        string patient_no "患者番号"
+        date eval_date "評価日"
+        string evaluation_type "評価票種別"
+        jsonb a_items "A項目生データ"
+        jsonb b_items "B項目生データ"
+        jsonb c_items "C項目生データ"
+        int a_score "A項目合計"
+        int b_score "B項目合計"
+        int c_score "C項目（0 or 1）"
+        boolean is_met_criteria "基準クリアフラグ"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% リレーション: レコード → 患者 → 取込データ → 日次評価
     record ||--o{ patient : "has"
-    patient ||--o{ daily_nursing_evaluation : "has"
+    record ||--o{ h_record : "has"
+    record ||--o{ ef_medical_act : "has"
+    record ||--o{ daily_nursing_evaluation : "has"
 
     %% ==============================
     %% Layer 4: ユーザー系（将来用）
@@ -222,8 +249,10 @@ erDiagram
 
 | テーブル名 | 用途 | 備考 |
 |-----------|------|------|
-| patient | Hファイルから取り込んだ患者基本情報 | recordに紐付く |
-| daily_nursing_evaluation | EFファイルから取り込んだ日次評価データ | A・B項目は合計スコアと個別スコア（JSONB）を両方保持。C項目は判定結果（0 or 1）のみ保存 |
+| patient | Hファイルから取り込んだ患者基本情報 | `record` に紐付く。日付は `YYYY-MM-DD` |
+| h_record | Hファイルから取り込んだ明細行データ | ペイロード(B項目等)を JSONB 配列として保持 |
+| ef_medical_act | EFファイルから取り込んだ診療行為データ | C項目やA項目の一部判定（注射等）の元データ |
+| daily_nursing_evaluation | H/EFデータ統合後の日次評価データ（受け皿） | A/B/C項目の生データを JSONB で、合計・結果を `int`/`boolean` で保持 |
 
 ### ユーザー系
 
