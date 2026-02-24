@@ -78,7 +78,9 @@ export function WardConfirmStep({
       }
       await onConfirm();
       setIsComplete(true);
-    } catch {
+    } catch (error: any) {
+      console.error(error);
+      alert('エラーが発生しました: ' + (error.message || '不明なエラー'));
       setIsProcessing(false);
     }
   }

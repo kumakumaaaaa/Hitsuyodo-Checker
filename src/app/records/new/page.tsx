@@ -9,8 +9,8 @@ import { SetupStep } from '@/components/records/SetupStep';
 import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
-import { recordRepository } from '@/lib/db/repositories/record-repository';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
+import { recordRepository } from '@/lib/db/repositories/record-repository';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -59,23 +59,28 @@ export default function NewRecordPage() {
   }, [hFile, efFile, wards]);
 
   const handleConfirm = useCallback(async () => {
-    await recordRepository.create({
-      title: title || `${periodFrom}分`,
-      periodFrom: `${periodFrom}-01`,
-      periodTo: `${periodTo}-01`,
-      evaluationMethod,
-      hFileName: hFile?.name ?? '',
-      efFileName: efFile?.name ?? '',
-      wards: wards.map((w) => ({
-        wardCode: w.wardCode,
-        wardName: w.wardName,
-        admissionTypeId: w.admissionTypeId,
-      })),
-    });
+    try {
+      const recordId = await recordRepository.create({
+        title: title || `${periodFrom}分`,
+        periodFrom: `${periodFrom}-01`,
+        periodTo: `${periodTo}-01`,
+        evaluationMethod,
+        hFileName: hFile?.name ?? '',
+        efFileName: efFile?.name ?? '',
+        wards: wards.map((w) => ({
+          wardCode: w.wardCode,
+          wardName: w.wardName,
+          admissionTypeId: w.admissionTypeId,
+        })),
+      });
 
-    setTimeout(() => {
-      router.push('/');
-    }, 1500);
+      setTimeout(() => {
+        router.push(`/records/${recordId}`);
+      }, 1500);
+    } catch (e) {
+      console.error('Record creation failed:', e);
+      throw e;
+    }
   }, [title, periodFrom, periodTo, hFile, efFile, wards, evaluationMethod, router]);
 
   return (

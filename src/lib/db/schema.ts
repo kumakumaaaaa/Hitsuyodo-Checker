@@ -51,7 +51,7 @@ export const schema = `
     evaluation_method TEXT NOT NULL DEFAULT 'necessity_1' CHECK (evaluation_method IN ('necessity_1', 'necessity_2')),
     h_file_name TEXT,
     ef_file_name TEXT,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'error')),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
@@ -95,4 +95,13 @@ export const schema = `
     c_receipt_code TEXT,
     is_severe BOOLEAN DEFAULT FALSE
   );
+
+  -- ==================
+  -- 既存IndexedDB環境向けのマイグレーション (v0.5対応)
+  -- ==================
+  ALTER TABLE record ADD COLUMN IF NOT EXISTS evaluation_method TEXT NOT NULL DEFAULT 'necessity_2' CHECK (evaluation_method IN ('necessity_1', 'necessity_2'));
+
+  -- statusカラムの制約を一度削除して再作成 ('draft' を許可するため)
+  ALTER TABLE record DROP CONSTRAINT IF EXISTS record_status_check;
+  ALTER TABLE record ADD CONSTRAINT record_status_check CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error'));
 `;
