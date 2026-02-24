@@ -78,6 +78,40 @@ export const recordRepository = {
       [title, id]
     );
   },
+
+  /**
+   * レコードを新規作成（record + ward_setting を一括INSERT）
+   */
+  async create(data: {
+    title: string;
+    periodFrom: string;
+    periodTo: string;
+    hFileName: string;
+    efFileName: string;
+    wards: { wardCode: string; wardName: string; nursingNeedType: number }[];
+  }): Promise<number> {
+    const db = await getDB();
+
+    // レコード本体を挿入
+    const result = await db.query<{ id: number }>(
+      `INSERT INTO record (title, period_from, period_to, h_file_name, ef_file_name, status)
+       VALUES ($1, $2, $3, $4, $5, 'draft')
+       RETURNING id`,
+      [data.title, data.periodFrom, data.periodTo, data.hFileName, data.efFileName]
+    );
+    const recordId = result.rows[0].id;
+
+    // 病棟設定を挿入
+    for (const ward of data.wards) {
+      await db.query(
+        `INSERT INTO ward_setting (record_id, ward_code, ward_name, nursing_need_type)
+         VALUES ($1, $2, $3, $4)`,
+        [recordId, ward.wardCode, ward.wardName, ward.nursingNeedType]
+      );
+    }
+
+    return recordId;
+  },
 };
 
 /**
