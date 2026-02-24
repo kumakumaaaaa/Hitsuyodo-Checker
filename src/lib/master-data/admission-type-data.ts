@@ -41,8 +41,8 @@ export interface AdmissionType {
 }
 
 export const ADMISSION_TYPES: AdmissionType[] = [
-  // 一般病棟入院基本料
-  { id: 1, name: '急性期一般入院料1', category: 'general' },
+  // 一般病棟入院基本料（急性期一般入院料1は難易度が高い為一旦除外）
+
   { id: 2, name: '急性期一般入院料2', category: 'general' },
   { id: 3, name: '急性期一般入院料3', category: 'general' },
   { id: 4, name: '急性期一般入院料4', category: 'general' },
@@ -67,9 +67,7 @@ export interface AdmissionTypeCriteria {
 }
 
 export const ADMISSION_TYPE_CRITERIA: AdmissionTypeCriteria[] = [
-  // 急性期一般入院料1: P1（基準①）+ P2（基準②）
-  { id: 1, admissionTypeId: 1, judgmentPatternId: 1, criteriaNo: '基準①', thresholdRate: null },
-  { id: 2, admissionTypeId: 1, judgmentPatternId: 2, criteriaNo: '基準②', thresholdRate: null },
+
   // 急性期一般入院料2〜5: P2
   { id: 3, admissionTypeId: 2, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
   { id: 4, admissionTypeId: 3, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
