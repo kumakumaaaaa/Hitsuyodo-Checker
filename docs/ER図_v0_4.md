@@ -1,6 +1,6 @@
 # 看護必要度管理システム ER図
 
-**Version:** 0.4  
+**Version:** 0.5  
 **作成日:** 2026年2月  
 **ステータス:** ドラフト（開発中）
 
@@ -14,6 +14,7 @@
 | 0.2 | 2026年2月 | `c_item_code_master` を `ac_item_code_master` にリネーム。カラム構成をA・C項目コードマスタTSVの構成に合わせて更新 |
 | 0.3 | 2026年2月 | `ac_item_code_master` を `general_ward_ac_item_code_master` にリネーム（一般病棟用マスタであることを明示） |
 | 0.4 | 2026年2月 | 入院料マスタを3テーブル構成に再設計（`judgment_pattern_master` + `admission_type_master` + `admission_type_criteria`）。`record` に `evaluation_method` を追加。`ward_setting` から `nursing_need_type` を削除 |
+| 0.5 | 2026年2月 | `ward_default_setting` テーブルを追加（localStorage永続化の論理モデル）。`ward_setting.ward_name` を必須に変更 |
 
 ---
 
@@ -53,6 +54,19 @@ erDiagram
     %% リレーション: 判定パターン ↔ 入院料
     admission_type_master ||--o{ admission_type_criteria : "has"
     judgment_pattern_master ||--o{ admission_type_criteria : "used by"
+
+    %% ==============================
+    %% Layer 1: マスタ系（デフォルト設定）
+    %% ==============================
+
+    ward_default_setting {
+        string ward_code PK "病棟コード"
+        string ward_name "デフォルト病棟名称"
+        int admission_type_id FK "デフォルト入院料（NULLable）"
+    }
+
+    %% リレーション: デフォルト設定 → 入院料マスタ
+    admission_type_master ||--o{ ward_default_setting : "default for"
 
     %% ==============================
     %% Layer 1: マスタ系（加算）
@@ -120,7 +134,7 @@ erDiagram
         int id PK
         int record_id FK
         string ward_code "病棟コード（自動抽出）"
-        string ward_name "病棟名称（任意）"
+        string ward_name "病棟名称（必須）"
         int admission_type_id FK "入院料（NULLable）"
     }
 
