@@ -135,7 +135,7 @@ erDiagram
         int record_id FK
         string ward_code "病棟コード（自動抽出）"
         string ward_name "病棟名称（必須）"
-        int admission_type_id FK "入院料（NULLable）"
+        int admission_type_id FK "入院料（必須）"
     }
 
     ward_kasan_setting {

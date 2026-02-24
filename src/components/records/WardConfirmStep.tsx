@@ -46,7 +46,8 @@ export function WardConfirmStep({
 
   const evaluationLabel = evaluationMethod === 'necessity_1' ? '看護必要度 Ⅰ' : '看護必要度 Ⅱ';
   const allWardsNamed = wards.every((w) => w.wardName.trim().length > 0);
-  const canGenerate = wards.length > 0 && allWardsNamed;
+  const allWardsHaveAdmission = wards.every((w) => w.admissionTypeId !== null);
+  const canGenerate = wards.length > 0 && allWardsNamed && allWardsHaveAdmission;
 
   const groupedAdmissionTypes = getAdmissionTypesByCategory();
 
@@ -194,14 +195,18 @@ export function WardConfirmStep({
 
                     {/* 2行目: 入院料選択 */}
                     <div className="ml-9">
-                      <label className="mb-0.5 block text-[11px] font-medium text-text-muted">入院料</label>
+                      <label className="mb-0.5 block text-[11px] font-medium text-text-muted">入院料 <span className="text-red-400">*</span></label>
                       <div className="relative">
                         <select
                           value={ward.admissionTypeId ?? ''}
                           onChange={(e) => updateWard(ward.wardCode, {
                             admissionTypeId: e.target.value ? Number(e.target.value) : null,
                           })}
-                          className="w-full appearance-none rounded-lg border border-border bg-background px-2.5 py-1.5 pr-8 text-sm text-text-primary focus:border-accent focus:outline-none"
+                          className={`w-full appearance-none rounded-lg border bg-background px-2.5 py-1.5 pr-8 text-sm text-text-primary focus:outline-none ${
+                            ward.admissionTypeId === null
+                              ? 'border-red-300 focus:border-red-400'
+                              : 'border-border focus:border-accent'
+                          }`}
                         >
                           <option value="">選択してください</option>
                           {groupedAdmissionTypes.map((group) => (
