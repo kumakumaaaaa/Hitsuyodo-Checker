@@ -10,6 +10,7 @@ import {
   getJudgmentPattern,
   getAdmissionTypesByCategory,
 } from '@/lib/master-data/admission-type-data';
+import { getWardDefaults, saveWardDefaults, type WardDefault } from '@/lib/settings/ward-defaults';
 
 /* ===== Step 2: 病棟設定 & 確認・生成 ===== */
 interface WardConfirmStepProps {
@@ -41,9 +42,11 @@ export function WardConfirmStep({
 }: WardConfirmStepProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
 
   const evaluationLabel = evaluationMethod === 'necessity_1' ? '看護必要度 Ⅰ' : '看護必要度 Ⅱ';
-  const canGenerate = wards.length > 0;
+  const allWardsNamed = wards.every((w) => w.wardName.trim().length > 0);
+  const canGenerate = wards.length > 0 && allWardsNamed;
 
   const groupedAdmissionTypes = getAdmissionTypesByCategory();
 
@@ -51,9 +54,27 @@ export function WardConfirmStep({
     onWardsChange(wards.map((w) => (w.wardCode === wardCode ? { ...w, ...updates } : w)));
   }
 
+  /** デフォルト設定に保存（既存設定とマージ、病棟コード重複なし） */
+  function saveWardsAsDefaults() {
+    const existing = getWardDefaults();
+    const existingMap = new Map(existing.map((d) => [d.wardCode, d]));
+    // 現在の病棟設定で上書き（マージ）
+    for (const ward of wards) {
+      existingMap.set(ward.wardCode, {
+        wardCode: ward.wardCode,
+        wardName: ward.wardName,
+        admissionTypeId: ward.admissionTypeId,
+      });
+    }
+    saveWardDefaults(Array.from(existingMap.values()));
+  }
+
   async function handleConfirm() {
     setIsProcessing(true);
     try {
+      if (saveAsDefault) {
+        saveWardsAsDefaults();
+      }
       await onConfirm();
       setIsComplete(true);
     } catch {
@@ -155,13 +176,17 @@ export function WardConfirmStep({
                           </div>
                         </div>
                         <div>
-                          <label className="mb-0.5 block text-[11px] font-medium text-text-muted">病棟名称（任意）</label>
+                          <label className="mb-0.5 block text-[11px] font-medium text-text-muted">病棟名称 <span className="text-red-400">*</span></label>
                           <input
                             type="text"
                             value={ward.wardName}
                             onChange={(e) => updateWard(ward.wardCode, { wardName: e.target.value })}
                             placeholder="例: 3階東病棟"
-                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:outline-none"
+                            className={`w-full rounded-lg border bg-background px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none ${
+                              ward.wardName.trim().length === 0
+                                ? 'border-red-300 focus:border-red-400'
+                                : 'border-border focus:border-accent'
+                            }`}
                           />
                         </div>
                       </div>
@@ -217,6 +242,17 @@ export function WardConfirmStep({
           )}
         </div>
       </div>
+
+      {/* ── デフォルト保存チェック ── */}
+      <label className="flex items-center gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={saveAsDefault}
+          onChange={(e) => setSaveAsDefault(e.target.checked)}
+          className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+        />
+        <span className="text-sm text-text-secondary">この病棟設定をデフォルトとして保存する</span>
+      </label>
 
       {/* ── ナビゲーション ── */}
       <div className="flex justify-between pt-2">
