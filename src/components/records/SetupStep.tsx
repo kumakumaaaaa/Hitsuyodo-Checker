@@ -17,6 +17,7 @@ export interface WardSetting {
   id: string;
   wardCode: string;
   wardName: string;
+  admissionTypeId: number | null;
 }
 
 /* ===== ユーティリティ ===== */

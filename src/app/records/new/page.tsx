@@ -46,6 +46,7 @@ export default function NewRecordPage() {
       id: existingMap.get(code)?.id ?? crypto.randomUUID(),
       wardCode: code,
       wardName: existingMap.get(code)?.wardName ?? '',
+      admissionTypeId: existingMap.get(code)?.admissionTypeId ?? null,
     }));
     setWards(newWards);
     setCurrentStep(2);
