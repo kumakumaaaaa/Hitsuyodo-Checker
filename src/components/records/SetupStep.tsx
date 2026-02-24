@@ -189,6 +189,7 @@ interface SetupStepProps {
   periodTo: string;
   onPeriodToChange: (p: string) => void;
   onNext: () => void;
+  error?: string | null;
 }
 
 export function SetupStep({
@@ -198,6 +199,7 @@ export function SetupStep({
   periodFrom, onPeriodFromChange,
   periodTo, onPeriodToChange,
   onNext,
+  error,
 }: SetupStepProps) {
   const canProceed =
     hFile !== null &&
@@ -300,6 +302,14 @@ export function SetupStep({
           </div>
         </div>
       </section>
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger whitespace-pre-wrap">
+          <AlertCircle size={16} className="inline mr-2 -mt-0.5" />
+          {error}
+        </div>
+      )}
 
       {/* 次へ */}
       <div className="flex justify-end pt-2">

@@ -6,6 +6,7 @@ import { getDB } from '@/lib/db';
 export function DebugReceivers({ recordId }: { recordId: number }) {
   const [data, setData] = useState<any[]>([]);
   const [counts, setCounts] = useState({ patient: 0, h_record: 0, ef_medical_act: 0 });
+  const [hRecordSample, setHRecordSample] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,15 +20,21 @@ export function DebugReceivers({ recordId }: { recordId: number }) {
         const hCnt = await db.query<{count: string}>(`SELECT count(*) FROM h_record WHERE record_id = $1`, [recordId]);
         const efCnt = await db.query<{count: string}>(`SELECT count(*) FROM ef_medical_act WHERE record_id = $1`, [recordId]);
         
+        const hSample = await db.query(
+          `SELECT patient_no, payload_type, eval_date::text, payload_data FROM h_record WHERE record_id = $1 AND payload_type = 'ASS0021' LIMIT 1`,
+          [recordId]
+        );
+
         setCounts({
           patient: parseInt(pCnt.rows[0].count, 10),
           h_record: parseInt(hCnt.rows[0].count, 10),
           ef_medical_act: parseInt(efCnt.rows[0].count, 10),
         });
+        setHRecordSample(hSample.rows[0] || null);
 
         // 受け皿一覧を取得
         const res = await db.query(
-          `SELECT ward_code, patient_no, eval_date::text, evaluation_type 
+          `SELECT ward_code, patient_no, eval_date::text, evaluation_type, b_score, b_items 
            FROM daily_nursing_evaluation 
            WHERE record_id = $1 
            ORDER BY ward_code, patient_no, eval_date
@@ -54,9 +61,15 @@ export function DebugReceivers({ recordId }: { recordId: number }) {
       </div>
       <div className="p-4 border-b border-blue-100 bg-white/50 text-sm flex gap-6">
         <div><strong>Patient:</strong> {counts.patient}件</div>
-        <div><strong>H Record:</strong> {counts.h_record}件</div>
+        <div><strong>H Record:</strong> {counts.h_record}件 ({hRecordSample ? `ASS0021あり: ${hRecordSample.eval_date}` : 'ASS0021なし'})</div>
         <div><strong>EF Medical Act:</strong> {counts.ef_medical_act}件</div>
       </div>
+      {hRecordSample && (
+        <div className="p-4 border-b border-blue-100 bg-gray-50 text-xs font-mono">
+          <strong>H Record (ASS0021) Sample:</strong>
+          <pre>{JSON.stringify(hRecordSample, null, 2)}</pre>
+        </div>
+      )}
       <div className="p-5 overflow-auto max-h-64 text-xs font-mono">
         {loading ? (
           <p className="text-blue-500">読み込み中...</p>
@@ -70,6 +83,8 @@ export function DebugReceivers({ recordId }: { recordId: number }) {
                 <th className="py-1 px-2">Ward</th>
                 <th className="py-1 px-2">Date</th>
                 <th className="py-1 px-2">Type</th>
+                <th className="py-1 px-2">B Score</th>
+                <th className="py-1 px-2">B Items JSON</th>
               </tr>
             </thead>
             <tbody>
@@ -79,6 +94,10 @@ export function DebugReceivers({ recordId }: { recordId: number }) {
                   <td className="py-1 px-2">{row.ward_code}</td>
                   <td className="py-1 px-2">{row.eval_date}</td>
                   <td className="py-1 px-2 text-blue-700 font-semibold">{row.evaluation_type}</td>
+                  <td className="py-1 px-2 font-bold">{row.b_score}</td>
+                  <td className="py-1 px-2 text-[10px] text-gray-500 max-w-xs truncate" title={JSON.stringify(row.b_items)}>
+                    {JSON.stringify(row.b_items)}
+                  </td>
                 </tr>
               ))}
             </tbody>

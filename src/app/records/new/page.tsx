@@ -30,18 +30,35 @@ export default function NewRecordPage() {
   const [title, setTitle] = useState('');
   const [periodFrom, setPeriodFrom] = useState('');
   const [periodTo, setPeriodTo] = useState('');
+  const [setupError, setSetupError] = useState<string | null>(null);
 
   // Step 2 state
   const [extractedWardCodes, setExtractedWardCodes] = useState<string[]>([]);
   const [wards, setWards] = useState<WardSetting[]>([]);
+  const [hPeriod, setHPeriod] = useState<{ minDate: string | null; maxDate: string | null } | null>(null);
+  const [efPeriod, setEfPeriod] = useState<{ minDate: string | null; maxDate: string | null } | null>(null);
 
   // Step 1 → Step 2: ファイルから病棟コードを抽出して遷移
   const handleNextToStep2 = useCallback(async () => {
-    const codes = await extractWardCodes(
+    setSetupError(null);
+    const { wardCodes: codes, minDate, maxDate, hPeriod: hp, efPeriod: ep } = await extractWardCodes(
       hFile?.file ?? null,
       efFile?.file ?? null
     );
+
+    // アップロードされたファイルの実施年月日(min/max)が、ユーザー指定の期間（年月）に収まっているかチェック
+    if (minDate && maxDate) {
+      const minMonth = minDate.substring(0, 7);
+      const maxMonth = maxDate.substring(0, 7);
+      if (minMonth < periodFrom || maxMonth > periodTo) {
+        setSetupError(`取込ファイル内のデータ期間（${minDate} 〜 ${maxDate}）が、指定された対象期間（${periodFrom} 〜 ${periodTo}）の月度から外れたデータを含んでいます。\n対象期間の設定またはファイルを見直してください。`);
+        return;
+      }
+    }
+
     setExtractedWardCodes(codes);
+    setHPeriod(hp);
+    setEfPeriod(ep);
 
     // 抽出した病棟コードからWardSettingを初期化
     // 前回入力した値を保持、なければデフォルト設定を適用
@@ -87,6 +104,10 @@ export default function NewRecordPage() {
       // H/EFの生データが保存された直後、対象患者と病棟期間に対する「評価票の受け皿」を一括生成する
       const { generateEvaluationReceivers } = await import('@/lib/evaluations/receiver-generator');
       await generateEvaluationReceivers(recordId);
+
+      // B項目のマッピングとスコア計算を実行
+      const { mapBItemsFromHFile } = await import('@/lib/evaluations/b-score-mapper');
+      await mapBItemsFromHFile(recordId);
 
       // TODO: レコードステータスを processing または done に更新する処理を追加
 
@@ -134,6 +155,7 @@ export default function NewRecordPage() {
             periodTo={periodTo}
             onPeriodToChange={setPeriodTo}
             onNext={handleNextToStep2}
+            error={setupError}
           />
         )}
 
@@ -150,6 +172,8 @@ export default function NewRecordPage() {
             onWardsChange={setWards}
             onBack={() => setCurrentStep(1)}
             onConfirm={handleConfirm}
+            hPeriod={hPeriod}
+            efPeriod={efPeriod}
           />
         )}
       </main>

@@ -49,9 +49,9 @@ export async function generateEvaluationReceivers(recordId: number): Promise<voi
     evaluationTypeMap.set(w.ward_code, evalType);
   }
 
-  // 3. 患者情報を取得
-  const patientsResult = await db.query<{ patient_no: string; admission_date: string | null; discharge_date: string | null }>(
-    `SELECT patient_no, admission_date::text as admission_date, discharge_date::text as discharge_date FROM patient WHERE record_id = $1`,
+  // 3. h_record に存在する患者と日付の組み合わせを取得（Hファイルベース）
+  const hDistResult = await db.query<{ patient_no: string; eval_date: string }>(
+    `SELECT DISTINCT patient_no, eval_date::text as eval_date FROM h_record WHERE record_id = $1`,
     [recordId]
   );
 
@@ -61,45 +61,35 @@ export async function generateEvaluationReceivers(recordId: number): Promise<voi
   let params: any[] = [];
   let paramIndex = 1;
 
-  for (const patient of patientsResult.rows) {
-    const admDate = patient.admission_date ? new Date(patient.admission_date) : new Date('2000-01-01');
-    const disDate = patient.discharge_date ? new Date(patient.discharge_date) : new Date('2999-12-31');
+  const entries = Array.from(evaluationTypeMap.entries());
 
-    // 生成対象期間（レコード指定期間と、実際の入退院期間の重複する部分）
-    const effectiveStart = new Date(Math.max(recordStartDate.getTime(), admDate.getTime()));
-    const effectiveEnd = new Date(Math.min(recordEndDate.getTime(), disDate.getTime()));
+  for (const row of hDistResult.rows) {
+    const evalDateObj = new Date(row.eval_date);
+    
+    // 念のため、ユーザーが指定した対象期間外のデータは受け皿を作らないようにフィルタリング
+    if (evalDateObj < recordStartDate || evalDateObj > recordEndDate) {
+      continue;
+    }
 
-    if (effectiveStart > effectiveEnd) continue; // 期間外の場合はスキップ
-
-    // その患者が属する可能性のある「対象病棟の受け皿」すべてを作成
-    const entries = Array.from(evaluationTypeMap.entries());
+    // その患者・日付に対して、対象病棟の受け皿をすべて作成
     for (const [wardCode, evalType] of entries) {
-      let currentDate = new Date(effectiveStart);
-      
-      while (currentDate <= effectiveEnd) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+      insertValues.push(`($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4})`);
+      params.push(recordId, wardCode, row.patient_no, row.eval_date, evalType);
+      paramIndex += 5;
+
+      // チャンクサイズに達したらINSERT実行して初期化
+      if (insertValues.length >= chunkSize) {
+        const query = `
+          INSERT INTO daily_nursing_evaluation 
+            (record_id, ward_code, patient_no, eval_date, evaluation_type)
+          VALUES ${insertValues.join(', ')}
+          ON CONFLICT (record_id, ward_code, patient_no, eval_date) DO NOTHING
+        `;
+        await db.query(query, params);
         
-        insertValues.push(`($${paramIndex}, $${paramIndex+1}, $${paramIndex+2}, $${paramIndex+3}, $${paramIndex+4})`);
-        params.push(recordId, wardCode, patient.patient_no, dateStr, evalType);
-        paramIndex += 5;
-
-        // チャンクサイズに達したらINSERT実行して初期化
-        if (insertValues.length >= chunkSize) {
-          const query = `
-            INSERT INTO daily_nursing_evaluation 
-              (record_id, ward_code, patient_no, eval_date, evaluation_type)
-            VALUES ${insertValues.join(', ')}
-            ON CONFLICT (record_id, ward_code, patient_no, eval_date) DO NOTHING
-          `;
-          await db.query(query, params);
-          
-          insertValues = [];
-          params = [];
-          paramIndex = 1;
-        }
-
-        // 1日進める
-        currentDate.setDate(currentDate.getDate() + 1);
+        insertValues = [];
+        params = [];
+        paramIndex = 1;
       }
     }
   }

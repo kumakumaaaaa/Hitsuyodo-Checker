@@ -34,71 +34,122 @@ function isValidWardCode(code: string): boolean {
   return /^[A-Za-z0-9_-]+$/.test(code);
 }
 
+export interface ExtractResult {
+  wardCodes: string[];
+  minDate: string | null;
+  maxDate: string | null;
+  hPeriod: { minDate: string | null; maxDate: string | null };
+  efPeriod: { minDate: string | null; maxDate: string | null };
+}
+
+function parseDateStr(d: string | undefined): string | null {
+  if (!d || d.length !== 8) return null;
+  const year = d.slice(0, 4);
+  const month = d.slice(4, 6);
+  const day = d.slice(6, 8);
+  if (month === '00' || day === '00') return null;
+  return `${year}-${month}-${day}`;
+}
+
+function updateMinMaxDates(
+  currentMin: string | null,
+  currentMax: string | null,
+  newDate: string | null
+): [string | null, string | null] {
+  if (!newDate) return [currentMin, currentMax];
+  let min = currentMin;
+  let max = currentMax;
+  if (!min || newDate < min) min = newDate;
+  if (!max || newDate > max) max = newDate;
+  return [min, max];
+}
+
 /**
- * Hファイルのヘッダ部から病棟コードを抽出する
- * Hファイルはタブ区切りで、病棟コードはヘッダ部の2列目（0始まりindex=1）
+ * Hファイルのヘッダ部から病棟コードと日付（実施年月日 index=5）を抽出する
  */
-export function extractWardCodesFromHFile(text: string): string[] {
+export function extractWardCodesFromHFile(text: string): { codes: Set<string>; minDate: string | null; maxDate: string | null } {
   const lines = text.split('\n').filter((l) => l.trim().length > 0);
   const codes = new Set<string>();
+  let minDate: string | null = null;
+  let maxDate: string | null = null;
 
   for (const line of lines) {
     const fields = line.split('\t');
-    // Hファイル: 施設コード(0), 病棟コード(1), データ識別番号(2), ...
-    if (fields.length >= 2) {
+    if (fields.length >= 6) {
       const code = fields[1]?.trim();
       if (isValidWardCode(code)) {
         codes.add(code);
       }
+      const evalDate = parseDateStr(fields[5]?.trim());
+      [minDate, maxDate] = updateMinMaxDates(minDate, maxDate, evalDate);
     }
   }
 
-  return Array.from(codes).sort();
+  return { codes, minDate, maxDate };
 }
 
 /**
- * EFファイルから病棟コード（EF-28）を抽出する
- * EFファイルはタブ区切りで、EF-28は28列目（0始まりindex=27）
+ * EFファイルから病棟コード（EF-28 index=27）と日付（EF-24 index=23）を抽出する
  */
-export function extractWardCodesFromEFFile(text: string): string[] {
+export function extractWardCodesFromEFFile(text: string): { codes: Set<string>; minDate: string | null; maxDate: string | null } {
   const lines = text.split('\n').filter((l) => l.trim().length > 0);
   const codes = new Set<string>();
+  let minDate: string | null = null;
+  let maxDate: string | null = null;
 
   for (const line of lines) {
     const fields = line.split('\t');
-    // EF-28: 病棟コード（0始まりindex=27）
     if (fields.length >= 28) {
       const code = fields[27]?.trim();
       if (isValidWardCode(code)) {
         codes.add(code);
       }
     }
+    if (fields.length >= 24) {
+      const evalDate = parseDateStr(fields[23]?.trim());
+      [minDate, maxDate] = updateMinMaxDates(minDate, maxDate, evalDate);
+    }
   }
 
-  return Array.from(codes).sort();
+  return { codes, minDate, maxDate };
 }
 
 /**
- * HファイルとEFファイルの両方から病棟コードを抽出して
- * ユニークな一覧として返す（和集合）
+ * HファイルとEFファイルの両方から病棟コードと日付を抽出する
  */
 export async function extractWardCodes(
   hFile: File | null,
   efFile: File | null
-): Promise<string[]> {
+): Promise<ExtractResult> {
   const allCodes = new Set<string>();
+  let overallMinDate: string | null = null;
+  let overallMaxDate: string | null = null;
+  let hPeriod = { minDate: null as string | null, maxDate: null as string | null };
+  let efPeriod = { minDate: null as string | null, maxDate: null as string | null };
 
   if (hFile) {
     const text = await readFileAsText(hFile);
-    const codes = extractWardCodesFromHFile(text);
+    const { codes, minDate, maxDate } = extractWardCodesFromHFile(text);
     codes.forEach((c) => allCodes.add(c));
+    [overallMinDate, overallMaxDate] = updateMinMaxDates(overallMinDate, overallMaxDate, minDate);
+    [overallMinDate, overallMaxDate] = updateMinMaxDates(overallMinDate, overallMaxDate, maxDate);
+    hPeriod = { minDate, maxDate };
   }
 
   if (efFile) {
     const text = await readFileAsText(efFile);
-    const codes = extractWardCodesFromEFFile(text);
+    const { codes, minDate, maxDate } = extractWardCodesFromEFFile(text);
     codes.forEach((c) => allCodes.add(c));
+    [overallMinDate, overallMaxDate] = updateMinMaxDates(overallMinDate, overallMaxDate, minDate);
+    [overallMinDate, overallMaxDate] = updateMinMaxDates(overallMinDate, overallMaxDate, maxDate);
+    efPeriod = { minDate, maxDate };
   }
 
-  return Array.from(allCodes).sort();
+  return {
+    wardCodes: Array.from(allCodes).sort(),
+    minDate: overallMinDate,
+    maxDate: overallMaxDate,
+    hPeriod,
+    efPeriod,
+  };
 }

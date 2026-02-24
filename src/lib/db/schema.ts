@@ -162,6 +162,12 @@ export const schema = `
   ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS a_items JSONB;
   ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS b_items JSONB;
   ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS c_items JSONB;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS a_score INTEGER DEFAULT 0;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS b_score INTEGER DEFAULT 0;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS c_score INTEGER DEFAULT 0;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS is_met_criteria BOOLEAN DEFAULT FALSE;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+  ALTER TABLE daily_nursing_evaluation ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
   -- 古いスキーマ（v0.5以前）で使われていたが現在は不要となったカラムを削除する
   ALTER TABLE daily_nursing_evaluation DROP COLUMN IF EXISTS patient_id;

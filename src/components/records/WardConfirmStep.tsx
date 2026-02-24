@@ -25,6 +25,8 @@ interface WardConfirmStepProps {
   onWardsChange: (w: WardSetting[]) => void;
   onBack: () => void;
   onConfirm: () => Promise<void>;
+  hPeriod?: { minDate: string | null; maxDate: string | null } | null;
+  efPeriod?: { minDate: string | null; maxDate: string | null } | null;
 }
 
 export function WardConfirmStep({
@@ -39,6 +41,8 @@ export function WardConfirmStep({
   onWardsChange,
   onBack,
   onConfirm,
+  hPeriod,
+  efPeriod,
 }: WardConfirmStepProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -183,11 +187,17 @@ export function WardConfirmStep({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-text-muted flex items-center gap-1"><FileText size={12} />Hファイル</span>
-            <span className="text-text-primary">{hFile?.name ?? '-'}</span>
+            <span className="text-text-primary text-right">
+              {hFile?.name ?? '-'}
+              {hPeriod?.minDate && <span className="ml-2 text-xs text-text-muted truncate block sm:inline">({hPeriod.minDate} 〜 {hPeriod.maxDate})</span>}
+            </span>
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm items-center">
             <span className="text-text-muted flex items-center gap-1"><FileText size={12} />EFファイル</span>
-            <span className="text-text-primary">{efFile?.name ?? '-'}</span>
+            <span className="text-text-primary text-right">
+              {efFile?.name ?? '-'}
+              {efPeriod?.minDate && <span className="ml-2 text-xs text-text-muted truncate block sm:inline">({efPeriod.minDate} 〜 {efPeriod.maxDate})</span>}
+            </span>
           </div>
         </div>
       </div>
