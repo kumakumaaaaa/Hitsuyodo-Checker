@@ -15,6 +15,7 @@
 | 0.2 | 2026年3月 | Step 1 の HRecordEntry 型定義・列マッピング・パースルールを確定（実データ突合済み） |
 | 0.3 | 2026年3月 | Step 1 の EfActEntry 型定義・列マッピング・パースルールを確定（DPC仕様書＋実データ突合済み） |
 | 0.4 | 2026年3月 | GenIIDailyScore 型定義を確定。A6サブ項目①〜⑪全てEFから（Ⅱ）。A3有効期間7日・A7有効期間2日を明記。判定パターンP1〜P3のフラグを追加 |
+| 0.5 | 2026年3月 | Step 3 applyHFileScores のロジックを確定。B項目（ASS0021）とTAR0010を同一ループで処理。bTotalの掛け算ルールを明記 |
 
 ---
 
@@ -434,7 +435,107 @@ export type GenIIDailyScore = {
 
 #### bTotal の算出について（🔲 未確定）
 
-B2〜B5 は「患者の状態」×「介助の実施」の掛け算構造。介助の実施が `0`（なし）の場合、患者の状態が要介助でも得点は `0` になる。具体的な算出マトリクスは別途確定する。
+B2〜B5 は「患者の状態」×「介助の実施」の掛け算構造。介助の実施が `0`（なし）の場合、患者の状態が要介助でも得点は `0` になる。
+
+---
+
+### 5-4. Step 3: applyHFileScores（B項目・TARフラグの書き込み）✅ 確定
+
+#### 設計方針
+
+- HRecordEntry[] を **1回だけ走査**（O(n)  n = Hファイル行数）
+- 同一ループ内で `ASS0021`（B項目）と `TAR0010`（判定対象フラグ）を両方処理
+- 中間データ構造を作らず、scoreMap に直接書き込み
+- 関数名は `applyHFileScores`（B項目とTAR両方を処理するため）
+
+#### シグネチャ
+
+```typescript
+function applyHFileScores(
+  hRecords: HRecordEntry[],
+  scoreMap: Map<string, GenIIDailyScore>
+): void
+```
+
+#### アルゴリズム
+
+```
+for each record in hRecords:
+    payloadType = record.columns[H_COL.PAYLOAD_TYPE]   // index 6
+    key = record.columns[H_COL.PATIENT_NO]              // index 2
+          + "|" 
+          + record.columns[H_COL.EVAL_DATE]             // index 5
+    score = scoreMap.get(key)
+    if score がない → skip
+
+    if payloadType === "ASS0021":
+        // ---- B項目（患者の状態） ----
+        score.b1 = parseInt(columns[9])  || 0   // payload 1: 寝返り
+        score.b2 = parseInt(columns[10]) || 0   // payload 2: 移乗
+        score.b3 = parseInt(columns[11]) || 0   // payload 3: 口腔清潔
+        score.b4 = parseInt(columns[12]) || 0   // payload 4: 食事摂取
+        score.b5 = parseInt(columns[13]) || 0   // payload 5: 衣服の着脱
+        score.b6 = parseInt(columns[14]) || 0   // payload 6: 指示が通じる
+        score.b7 = parseInt(columns[15]) || 0   // payload 7: 危険行動
+
+        // ---- B項目（介助の実施） ----
+        score.b2_assist = parseInt(columns[16]) || 0  // payload 8
+        score.b3_assist = parseInt(columns[17]) || 0  // payload 9
+        score.b4_assist = parseInt(columns[18]) || 0  // payload 10
+        score.b5_assist = parseInt(columns[19]) || 0  // payload 11
+
+        // ---- bTotal（掛け算ルール適用） ----
+        score.bTotal = score.b1                        // 介助なし（そのまま）
+                     + (score.b2 * score.b2_assist)    // 介助なし=0点
+                     + (score.b3 * score.b3_assist)
+                     + (score.b4 * score.b4_assist)
+                     + (score.b5 * score.b5_assist)
+                     + score.b6                        // 介助なし（そのまま）
+                     + score.b7                        // 介助なし（そのまま）
+
+    else if payloadType === "TAR0010":
+        score.tarFlag = parseInt(columns[9]) || 0
+        score.isTargetForEval = (score.tarFlag === 0 || score.tarFlag === 1)
+```
+
+#### 列インデックスの対応（ASS0021）
+
+HRecordEntry は `columns: string[]` で全列を保持している。ペイロードは index 9 から始まる。
+
+| ペイロード番号 | columns index | GenIIDailyScore フィールド | 値 |
+|:--------:|:--------:|----------|-----|
+| 1 | 9 | `b1` | 0/1/2 |
+| 2 | 10 | `b2` | 0/1/2 |
+| 3 | 11 | `b3` | 0/1 |
+| 4 | 12 | `b4` | 0/1/2 |
+| 5 | 13 | `b5` | 0/1/2 |
+| 6 | 14 | `b6` | 0/1 |
+| 7 | 15 | `b7` | 0/1 |
+| 8 | 16 | `b2_assist` | 0/1 |
+| 9 | 17 | `b3_assist` | 0/1 |
+| 10 | 18 | `b4_assist` | 0/1 |
+| 11 | 19 | `b5_assist` | 0/1 |
+
+#### bTotal の掛け算ルール
+
+| 項目 | 得点計算 | 備考 |
+|------|----------|------|
+| B1（寝返り） | そのまま | 介助フィールドなし |
+| B2（移乗） | b2 × b2_assist | 介助なし=0点 |
+| B3（口腔清潔） | b3 × b3_assist | 介助なし=0点 |
+| B4（食事摂取） | b4 × b4_assist | 介助なし=0点 |
+| B5（衣服の着脱） | b5 × b5_assist | 介助なし=0点 |
+| B6（指示が通じる） | そのまま | 介助フィールドなし |
+| B7（危険行動） | そのまま | 介助フィールドなし |
+
+#### 計算量
+
+| 操作 | 計算量 |
+|------|--------|
+| HRecordEntry[] の走査 | O(n) |
+| scoreMap.get() | O(1) / 回 |
+| parseInt × 11 + bTotal計算 | O(1) / 回 |
+| **合計** | **O(n)** |
 
 ---
 
@@ -453,8 +554,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   const scoreMap = buildEmptyScoreMap(hRecords, efRecords, input);
   // → Map<string, GenIIDailyScore>  key = "patientNo|evalDate"
 
-  // Step 3: B項目を埋める（Hファイルから）
-  applyBScores(hRecords, scoreMap);
+  // Step 3: B項目・TARフラグを埋める（Hファイルから・1パス）
+  applyHFileScores(hRecords, scoreMap);
 
   // Step 4: A項目を埋める（EFファイルから）
   const efGrouped = groupEfByPatientDate(efRecords);
@@ -480,10 +581,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
 | # | 事項 | ステータス |
 |---|------|-----------|
-| 1 | bTotal の算出マトリクス（患者の状態 × 介助の実施 → 最終得点） | 🔲 要確定 |
-| 2 | A3・A7・C項目の有効期間の起算日ルール（手術日当日を含むか等） | 🔲 要確認 |
-| 3 | `business_rules_v0_7.md` のA6サブ項目の記載修正（Ⅱでは①〜⑪全てEFから） | 🔲 要修正 |
-| 4 | `level1_only` フラグの正確な定義の再整理（ⅡでEFから評価する項目のフィルタ方法） | 🔲 要確認 |
+| 1 | A3・A7・C項目の有効期間の起算日ルール（当日含むか等） | 🔲 要確認 |
+| 2 | Step 4: applyAScores のロジック設計 | 🔲 次回 |
+| 3 | Step 5: applyCScores のロジック設計 | 🔲 次回 |
 
 ---
 
