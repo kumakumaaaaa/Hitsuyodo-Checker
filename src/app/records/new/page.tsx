@@ -8,9 +8,19 @@ import { StepIndicator } from '@/components/records/StepIndicator';
 import { SetupStep } from '@/components/records/SetupStep';
 import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
+import type { DateRange } from '@/lib/file-parser/validate-data-period';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
+import { useRecordSessionStore } from '@/lib/store/record-session-store';
+import { parseHFile } from '@/lib/file-parser/parse-h-file';
+import { parseEfFile } from '@/lib/file-parser/parse-ef-file';
+import { buildEmptyScoreMap } from '@/lib/calculation/build-empty-map';
+import { applyHFileScores } from '@/lib/calculation/apply-h-file-scores';
+import { applyEfFileCScores } from '@/lib/calculation/apply-ef-file-c-scores';
+import { applyEfFileAScores } from '@/lib/calculation/apply-ef-file-a-scores';
+import { applyCriteriaEval } from '@/lib/calculation/apply-criteria-eval';
+import { convertScoreMapToArray } from '@/lib/calculation/convert-to-array';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -20,6 +30,7 @@ const STEPS = [
 export default function NewRecordPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const setSession = useRecordSessionStore((state) => state.setSession);
 
   // Step 1 state
   const [evaluationMethod, setEvaluationMethod] = useState<EvaluationMethod>('necessity_2');
@@ -32,9 +43,11 @@ export default function NewRecordPage() {
   // Step 2 state
   const [extractedWardCodes, setExtractedWardCodes] = useState<string[]>([]);
   const [wards, setWards] = useState<WardSetting[]>([]);
+  const [hDateRange, setHDateRange] = useState<DateRange | null>(null);
+  const [efDateRange, setEfDateRange] = useState<DateRange | null>(null);
 
   // Step 1 → Step 2: ファイルから病棟コードを抽出して遷移
-  const handleNextToStep2 = useCallback(async () => {
+  const handleNextToStep2 = useCallback(async (hRange: DateRange | null, efRange: DateRange | null) => {
     const codes = await extractWardCodes(
       hFile?.file ?? null,
       efFile?.file ?? null
@@ -55,15 +68,24 @@ export default function NewRecordPage() {
       };
     });
     setWards(newWards);
+    setHDateRange(hRange);
+    setEfDateRange(efRange);
     setCurrentStep(2);
   }, [hFile, efFile, wards]);
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(async (onProgress?: (step: number) => void) => {
     try {
+      // Step 1: DB保存
+      onProgress?.(1);
+      const toYear = parseInt(periodTo.split('-')[0], 10);
+      const toMonth = parseInt(periodTo.split('-')[1], 10);
+      const lastDay = new Date(toYear, toMonth, 0).getDate();
+      const periodToFormatted = `${periodTo}-${lastDay.toString().padStart(2, '0')}`;
+
       const recordId = await recordRepository.create({
         title: title || `${periodFrom}分`,
         periodFrom: `${periodFrom}-01`,
-        periodTo: `${periodTo}-01`,
+        periodTo: periodToFormatted,
         evaluationMethod,
         hFileName: hFile?.name ?? '',
         efFileName: efFile?.name ?? '',
@@ -74,6 +96,49 @@ export default function NewRecordPage() {
         })),
       });
 
+      // Step 2: ファイルパース
+      onProgress?.(2);
+      const hRecords = hFile ? await parseHFile(hFile.file) : null;
+      const efRecords = efFile ? await parseEfFile(efFile.file) : null;
+
+      // Step 3: 評価マップ生成・B項目計算
+      onProgress?.(3);
+      let scoreMap = null;
+      let dailyScores = null;
+      
+      if (hRecords) {
+        scoreMap = buildEmptyScoreMap(hRecords);
+        applyHFileScores(hRecords, scoreMap);
+
+        // Step 4: A・C項目計算
+        onProgress?.(4);
+        if (efRecords) {
+          applyEfFileCScores(efRecords, scoreMap);
+          applyEfFileAScores(efRecords, scoreMap);
+        }
+
+        // Step 5: 施設基準判定
+        onProgress?.(5);
+        applyCriteriaEval(scoreMap);
+
+        // Step 6: 配列変換・保存
+        onProgress?.(6);
+        dailyScores = convertScoreMapToArray(scoreMap);
+      }
+
+      setSession({
+        recordId,
+        evaluationMethod,
+        hFile,
+        efFile,
+        hDateRange,
+        efDateRange,
+        hRecords,
+        efRecords,
+        scoreMap,
+        dailyScores,
+      });
+
       setTimeout(() => {
         router.push(`/records/${recordId}`);
       }, 1500);
@@ -81,7 +146,7 @@ export default function NewRecordPage() {
       console.error('Record creation failed:', e);
       throw e;
     }
-  }, [title, periodFrom, periodTo, hFile, efFile, wards, evaluationMethod, router]);
+  }, [title, periodFrom, periodTo, hFile, efFile, hDateRange, efDateRange, wards, evaluationMethod, router, setSession]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,6 +191,8 @@ export default function NewRecordPage() {
             evaluationMethod={evaluationMethod}
             hFile={hFile}
             efFile={efFile}
+            hDateRange={hDateRange}
+            efDateRange={efDateRange}
             title={title}
             periodFrom={periodFrom}
             periodTo={periodTo}

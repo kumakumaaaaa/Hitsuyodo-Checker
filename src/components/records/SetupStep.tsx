@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, FileText, X, AlertCircle, Calendar } from 'lucide-react';
+import { Upload, FileText, X, AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { extractDateRangeFromFile, validateDateRangeAgainstPeriod } from '@/lib/file-parser/validate-data-period';
+import { validateEvaluationMethod } from '@/lib/file-parser/validate-evaluation-method';
+import { validateFileHeader } from '@/lib/file-parser/validate-header';
 
 /* ===== 型定義 ===== */
 export type EvaluationMethod = 'necessity_1' | 'necessity_2';
@@ -63,11 +66,13 @@ function validateFile(file: File): FileValidationResult {
 
 /* ===== ファイルドロップゾーン ===== */
 function FileDropZone({
+  type,
   label,
   file,
   onFileSelect,
   onRemove,
 }: {
+  type: 'H' | 'EF';
   label: string;
   file: UploadedFile | null;
   onFileSelect: (file: UploadedFile) => void;
@@ -80,10 +85,17 @@ function FileDropZone({
     async (f: File) => {
       setError(null);
 
-      // バリデーション
+      // 基本バリデーション（拡張子・サイズ）
       const validation = validateFile(f);
       if (!validation.valid) {
         setError(validation.error ?? 'ファイルの検証に失敗しました');
+        return;
+      }
+
+      // ヘッダー内容の検証
+      const headerValidation = await validateFileHeader(f, type);
+      if (!headerValidation.valid) {
+        setError(headerValidation.error ?? 'ファイル形式が一致しません');
         return;
       }
 
@@ -185,7 +197,7 @@ interface SetupStepProps {
   onPeriodFromChange: (p: string) => void;
   periodTo: string;
   onPeriodToChange: (p: string) => void;
-  onNext: () => void;
+  onNext: (hDateRange: import('@/lib/file-parser/validate-data-period').DateRange | null, efDateRange: import('@/lib/file-parser/validate-data-period').DateRange | null) => void;
 }
 
 export function SetupStep({
@@ -196,12 +208,94 @@ export function SetupStep({
   periodTo, onPeriodToChange,
   onNext,
 }: SetupStepProps) {
+  const [periodError, setPeriodError] = useState<string | null>(null);
+  const [dataPeriodError, setDataPeriodError] = useState<string | null>(null);
+  const [isValidatingFiles, setIsValidatingFiles] = useState(false);
+
+  // 対象期間のバリデーション
+  const validatePeriod = useCallback((from: string, to: string) => {
+    if (!from || !to) {
+      setPeriodError(null);
+      return false;
+    }
+
+    const fromDate = new Date(`${from}-01`);
+    const MathToDate = new Date(`${to}-01`);
+
+    if (fromDate > MathToDate) {
+      setPeriodError('終了月は開始月以降を指定してください');
+      return false;
+    }
+
+    // 期間の月数計算: (年差 * 12) + 月差 + 1 (開始月を含むため)
+    const monthsDiff = (MathToDate.getFullYear() - fromDate.getFullYear()) * 12 + (MathToDate.getMonth() - fromDate.getMonth()) + 1;
+    if (monthsDiff > 3) {
+      setPeriodError('集計対象期間は最大3ヶ月以内までとしてください');
+      return false;
+    }
+
+    setPeriodError(null);
+    setDataPeriodError(null); // 対象期間が変わったらデータエラーもリセット
+    return true;
+  }, []);
+
+  const handlePeriodFromChange = (p: string) => {
+    onPeriodFromChange(p);
+    validatePeriod(p, periodTo);
+  };
+
+  const handlePeriodToChange = (p: string) => {
+    onPeriodToChange(p);
+    validatePeriod(periodFrom, p);
+  };
+
+  const handleNextClick = async () => {
+    if (!hFile || !efFile || !periodFrom || !periodTo) return;
+    
+    setIsValidatingFiles(true);
+    setDataPeriodError(null);
+
+    try {
+      // 評価方式とHファイル内容の整合性検証
+      const evalMethodRes = await validateEvaluationMethod(hFile.file, evaluationMethod);
+      if (!evalMethodRes.isValid) {
+        setDataPeriodError(evalMethodRes.error || '不明なエラー');
+        return;
+      }
+
+      // Hファイルのデータ期間検証
+      const hDateRange = await extractDateRangeFromFile(hFile.file, 'H');
+      const hValRes = validateDateRangeAgainstPeriod(hDateRange, periodFrom, periodTo, 'Hファイル');
+      if (!hValRes.isValid) {
+        setDataPeriodError(hValRes.error || '不明なエラー');
+        return;
+      }
+
+      // EFファイルのデータ期間検証
+      const efDateRange = await extractDateRangeFromFile(efFile.file, 'EF');
+      const efValRes = validateDateRangeAgainstPeriod(efDateRange, periodFrom, periodTo, 'EFファイル');
+      if (!efValRes.isValid) {
+        setDataPeriodError(efValRes.error || '不明なエラー');
+        return;
+      }
+
+      // バリデーション成功、次へ
+      onNext(hDateRange, efDateRange);
+    } catch (e) {
+      console.error(e);
+      setDataPeriodError('ファイルの読み込み中にエラーが発生しました');
+    } finally {
+      setIsValidatingFiles(false);
+    }
+  };
+
+  const isPeriodValid = periodFrom && periodTo && !periodError;
+
   const canProceed =
     hFile !== null &&
     efFile !== null &&
     title.trim() !== '' &&
-    periodFrom !== '' &&
-    periodTo !== '';
+    isPeriodValid;
 
   return (
     <div className="mx-auto max-w-2xl animate-slide-up space-y-7">
@@ -265,9 +359,11 @@ export function SetupStep({
             max="2099-12"
             onChange={(e) => {
               const val = e.target.value;
-              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodFromChange(val);
+              if (!val || /^\d{4}-\d{2}$/.test(val)) handlePeriodFromChange(val);
             }}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className={`flex-1 rounded-xl border bg-surface px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+              periodError ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'
+            }`}
           />
           <span className="text-text-muted text-sm">〜</span>
           <input
@@ -276,11 +372,19 @@ export function SetupStep({
             max="2099-12"
             onChange={(e) => {
               const val = e.target.value;
-              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodToChange(val);
+              if (!val || /^\d{4}-\d{2}$/.test(val)) handlePeriodToChange(val);
             }}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className={`flex-1 rounded-xl border bg-surface px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+              periodError ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'
+            }`}
           />
         </div>
+        {periodError && (
+          <p className="mt-1.5 flex items-start gap-1 text-xs text-danger">
+            <AlertCircle size={12} className="shrink-0 mt-0.5" />
+            {periodError}
+          </p>
+        )}
       </section>
 
       {/* ファイルアップロード */}
@@ -289,23 +393,36 @@ export function SetupStep({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">Hファイル</p>
-            <FileDropZone label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
+            <FileDropZone type="H" label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
           </div>
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">EFファイル</p>
-            <FileDropZone label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
+            <FileDropZone type="EF" label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
           </div>
         </div>
       </section>
 
       {/* 次へ */}
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end pt-2 flex-col items-end gap-3">
+        {dataPeriodError && (
+          <div className="rounded border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm font-medium text-danger break-words max-w-full">
+            <AlertCircle size={16} className="inline mr-1.5 -mt-0.5" />
+            {dataPeriodError}
+          </div>
+        )}
         <button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          onClick={handleNextClick}
+          disabled={!canProceed || isValidatingFiles}
+          className="rounded-xl flex items-center justify-center gap-2 bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
-          次へ：病棟設定
+          {isValidatingFiles ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              ファイル内容を確認中...
+            </>
+          ) : (
+            '次へ：病棟設定'
+          )}
         </button>
       </div>
     </div>

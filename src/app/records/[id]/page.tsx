@@ -5,6 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 import type { RecordDetail } from '@/types';
+import { DebugTab } from '@/components/records/DebugTab';
+import { NursingDetailTab } from '@/components/records/NursingDetailTab';
+import { CriteriaTab } from '@/components/records/CriteriaTab';
 import {
   ArrowLeft,
   Loader2,
@@ -22,9 +25,14 @@ import {
   getCriteriaByAdmissionType,
   getJudgmentPattern,
 } from '@/lib/master-data/admission-type-data';
+import { useRecordSessionStore } from '@/lib/store/record-session-store';
+import type { DateRange } from '@/lib/file-parser/validate-data-period';
 
 /* ===== タブ定義 ===== */
-type TabId = 'overview' | 'criteria' | 'detail' | 'analysis' | 'compare';
+type TabId = 'overview' | 'criteria' | 'detail' | 'analysis' | 'compare' | 'debug';
+
+// Extend RecordDetail with dynamic session fields locally for rendering
+export type RecordDetailWithSession = RecordDetail & { sessionHDateRange?: DateRange | null, sessionEfDateRange?: DateRange | null };
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; disabled?: boolean }[] = [
   { id: 'overview', label: 'レコード取り込み設定', icon: <FileText size={16} /> },
@@ -32,10 +40,11 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; disabled?: boolea
   { id: 'detail', label: '看護必要度詳細', icon: <ClipboardList size={16} /> },
   { id: 'analysis', label: 'ABC項目別分析', icon: <TrendingUp size={16} /> },
   { id: 'compare', label: '看護必要度Ⅰ・Ⅱ比較分析', icon: <GitCompareArrows size={16} /> },
+  { id: 'debug', label: 'パース結果デバッグ', icon: <span className="text-base leading-none">🐛</span> },
 ];
 
 /* ===== Tab 1: レコード取り込み設定 ===== */
-function OverviewTab({ record }: { record: RecordDetail }) {
+function OverviewTab({ record }: { record: RecordDetailWithSession }) {
   const evaluationLabel = record.evaluation_method === 'necessity_1' ? '看護必要度 Ⅰ' : '看護必要度 Ⅱ';
 
   return (
@@ -72,8 +81,16 @@ function OverviewTab({ record }: { record: RecordDetail }) {
         </div>
         <div className="p-5 space-y-3">
           <div className="grid grid-cols-2 gap-4">
-            <FileInfoCard label="Hファイル" filename={record.h_file_name} />
-            <FileInfoCard label="EFファイル" filename={record.ef_file_name} />
+            <FileInfoCard 
+              label="Hファイル" 
+              filename={record.h_file_name} 
+              dateRange={record.sessionHDateRange} 
+            />
+            <FileInfoCard 
+              label="EFファイル" 
+              filename={record.ef_file_name} 
+              dateRange={record.sessionEfDateRange} 
+            />
           </div>
         </div>
       </div>
@@ -150,13 +167,26 @@ function InfoRow({ label, value, icon, accent }: { label: string; value: string;
   );
 }
 
-function FileInfoCard({ label, filename }: { label: string; filename: string | null }) {
+function FileInfoCard({ 
+  label, 
+  filename,
+  dateRange
+}: { 
+  label: string; 
+  filename: string | null;
+  dateRange?: DateRange | null;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-background/50 p-3">
       <FileText size={20} className="text-text-muted/50 shrink-0" />
       <div className="min-w-0">
         <span className="text-[11px] text-text-muted block">{label}</span>
         <span className="text-sm font-medium text-text-primary truncate block">{filename || '-'}</span>
+        {dateRange && (
+          <span className="text-xs text-text-muted mt-0.5 block">
+            データ期間: {dateRange.minDate} 〜 {dateRange.maxDate}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -179,7 +209,13 @@ export default function RecordDetailPage() {
   const router = useRouter();
   const recordId = Number(params.id);
 
-  const [record, setRecord] = useState<RecordDetail | null>(null);
+  // Zustand Session Store から今回アップロードしたファイルの解析データを取得
+  // （直接詳細画面を開いた場合などはnullになる）
+  const sessionRecordId = useRecordSessionStore((s) => s.recordId);
+  const sessionHDateRange = useRecordSessionStore((s) => s.hDateRange);
+  const sessionEfDateRange = useRecordSessionStore((s) => s.efDateRange);
+
+  const [record, setRecord] = useState<RecordDetailWithSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
@@ -187,7 +223,15 @@ export default function RecordDetailPage() {
     async function load() {
       try {
         const data = await recordRepository.findByIdWithWards(recordId);
-        setRecord(data);
+        
+        // 取得したレコードIDが、現在Session Storeに保持されている作成直後のレコードIDと一致すればデータを紐付ける
+        const isFromCurrentSession = sessionRecordId === data?.id;
+
+        setRecord(data ? {
+          ...data,
+          sessionHDateRange: isFromCurrentSession ? sessionHDateRange : null,
+          sessionEfDateRange: isFromCurrentSession ? sessionEfDateRange : null,
+        } : null);
       } catch (error) {
         console.error('レコードの読み込みに失敗しました:', error);
       } finally {
@@ -273,12 +317,15 @@ export default function RecordDetailPage() {
               </nav>
 
               {/* コンテンツエリア */}
-              <div id="record-detail-content" className="flex-1 min-w-0 overflow-y-auto px-6 py-6 animate-slide-up">
+              <div id="record-detail-content" className={`flex-1 min-w-0 px-6 py-6 animate-slide-up ${
+                activeTab === 'detail' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+              }`}>
                 {activeTab === 'overview' && <OverviewTab record={record} />}
-                {activeTab === 'criteria' && <PlaceholderTab title="該当患者割合" icon={<BarChart3 size={40} />} />}
-                {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
+                {activeTab === 'criteria' && <CriteriaTab record={record} />}
+                {activeTab === 'detail' && <NursingDetailTab wardNameMap={Object.fromEntries(record.wards.map(w => [w.ward_code, w.ward_name]))} />}
                 {activeTab === 'analysis' && <PlaceholderTab title="ABC項目別分析" icon={<TrendingUp size={40} />} />}
                 {activeTab === 'compare' && <PlaceholderTab title="看護必要度Ⅰ・Ⅱ比較分析" icon={<GitCompareArrows size={40} />} />}
+                {activeTab === 'debug' && <DebugTab />}
               </div>
             </div>
           </>
