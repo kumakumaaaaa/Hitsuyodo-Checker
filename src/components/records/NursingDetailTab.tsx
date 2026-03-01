@@ -9,9 +9,10 @@ import type { GenIIDailyScore } from '@/types/daily-score';
 const PAGE_SIZE = 100;
 
 /** テーブル列定義 */
-const COLUMNS: { header: string; key: keyof GenIIDailyScore; group: string; isTotal?: boolean }[] = [
+const COLUMNS: { header: string; key: keyof GenIIDailyScore; group: string; isTotal?: boolean; isWardName?: boolean }[] = [
   // 患者基本情報
   { header: '病棟コード', key: 'wardCode', group: 'info' },
+  { header: '病棟名称', key: 'wardCode', group: 'info', isWardName: true },
   { header: 'データ識別番号', key: 'patientNo', group: 'info' },
   { header: '退院年月日', key: 'dischargeDate', group: 'info' },
   { header: '入院年月日', key: 'admissionDate', group: 'info' },
@@ -73,7 +74,7 @@ function formatDate(d: string): string {
   return `${d.slice(0, 4)}/${d.slice(4, 6)}/${d.slice(6, 8)}`;
 }
 
-export function NursingDetailTab() {
+export function NursingDetailTab({ wardNameMap }: { wardNameMap: Record<string, string> }) {
   const dailyScores = useRecordSessionStore((s) => s.dailyScores);
 
   // フィルタ
@@ -110,7 +111,7 @@ export function NursingDetailTab() {
   const handleExport = () => {
     const now = new Date();
     const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-    exportToExcel(filteredRecords, `看護必要度詳細_${dateStr}`);
+    exportToExcel(filteredRecords, `看護必要度詳細_${dateStr}`, wardNameMap);
   };
 
   // セルの値表示
@@ -122,6 +123,11 @@ export function NursingDetailTab() {
       return val
         ? <span className="text-accent font-bold">○</span>
         : <span className="text-text-muted">—</span>;
+    }
+
+    // 病棟名称列
+    if (col.isWardName) {
+      return wardNameMap[String(val)] || '—';
     }
 
     // 日付フォーマット
@@ -188,7 +194,7 @@ export function NursingDetailTab() {
           >
             <option value="">全病棟</option>
             {wardCodes.map((code) => (
-              <option key={code} value={code}>{code}</option>
+              <option key={code} value={code}>{wardNameMap[code] || code}</option>
             ))}
           </select>
           <input
@@ -260,8 +266,8 @@ export function NursingDetailTab() {
             <tr>
               {COLUMNS.map((col) => (
                 <th
-                  key={col.key}
-                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border min-w-[3rem] max-w-[5.5rem] text-[10px] leading-tight ${
+                  key={col.header}
+                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border text-[10px] leading-tight ${col.isWardName ? 'min-w-[6rem]' : 'min-w-[3rem] max-w-[5.5rem]'} ${
                     col.isTotal ? 'bg-accent/5 text-accent font-bold' : ''
                   }`}
                   title={col.header}
@@ -279,7 +285,7 @@ export function NursingDetailTab() {
                   <td className="px-2 py-1 text-center text-text-muted border-r border-border font-mono">{rowNum}</td>
                   {COLUMNS.map((col) => (
                     <td
-                      key={col.key}
+                      key={col.header}
                       className={`px-2 py-1 text-center border-r border-border ${
                         col.group === 'info' ? 'font-mono' : ''
                       } ${col.isTotal ? 'font-bold text-accent' : ''}`}

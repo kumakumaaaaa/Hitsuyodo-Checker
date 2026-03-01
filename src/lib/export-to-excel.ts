@@ -8,11 +8,12 @@ import type { GenIIDailyScore } from '@/types/daily-score';
  * @param records 出力対象のスコア配列（フィルタ適用後）
  * @param fileName ファイル名（拡張子なし）
  */
-export function exportToExcel(records: GenIIDailyScore[], fileName: string): void {
-  // ヘッダ定義（NursingDetailTab の COLUMNS と同じ並び順・表示名）
-  const columns: { header: string; key: keyof GenIIDailyScore }[] = [
+export function exportToExcel(records: GenIIDailyScore[], fileName: string, wardNameMap: Record<string, string> = {}): void {
+  // ヘッダ定義（表示名とフィールドの対応）
+  const columns: { header: string; key: keyof GenIIDailyScore; isWardName?: boolean }[] = [
     // 患者基本情報
     { header: '病棟コード', key: 'wardCode' },
+    { header: '病棟名称', key: 'wardCode', isWardName: true },
     { header: 'データ識別番号', key: 'patientNo' },
     { header: '退院年月日', key: 'dischargeDate' },
     { header: '入院年月日', key: 'admissionDate' },
@@ -64,6 +65,7 @@ export function exportToExcel(records: GenIIDailyScore[], fileName: string): voi
     columns.map((col) => {
       const val = r[col.key];
       if (typeof val === 'boolean') return val ? '○' : '—';
+      if (col.isWardName) return wardNameMap[String(val)] || '—';
       return val;
     })
   );

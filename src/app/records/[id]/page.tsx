@@ -321,7 +321,7 @@ export default function RecordDetailPage() {
               }`}>
                 {activeTab === 'overview' && <OverviewTab record={record} />}
                 {activeTab === 'criteria' && <PlaceholderTab title="該当患者割合" icon={<BarChart3 size={40} />} />}
-                {activeTab === 'detail' && <NursingDetailTab />}
+                {activeTab === 'detail' && <NursingDetailTab wardNameMap={Object.fromEntries(record.wards.map(w => [w.ward_code, w.ward_name]))} />}
                 {activeTab === 'analysis' && <PlaceholderTab title="ABC項目別分析" icon={<TrendingUp size={40} />} />}
                 {activeTab === 'compare' && <PlaceholderTab title="看護必要度Ⅰ・Ⅱ比較分析" icon={<GitCompareArrows size={40} />} />}
                 {activeTab === 'debug' && <DebugTab />}
