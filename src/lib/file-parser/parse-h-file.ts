@@ -5,14 +5,15 @@
 
 export const H_COL = {
   FACILITY_CODE: 0,
-  DATA_ID: 1,
-  DISCHARGE_DATE: 2,
-  ADMISSION_DATE: 3,
-  DATA_CATEGORY: 4,
+  WARD_CODE: 1,
+  PATIENT_NO: 2,
+  DISCHARGE_DATE: 3,
+  ADMISSION_DATE: 4,
   EVAL_DATE: 5,
   PAYLOAD_TYPE: 6,
-  VERSION: 7,
-  PAYLOAD_START: 8,
+  PAYLOAD_VERSION: 7,
+  PAYLOAD_SEQ: 8,
+  PAYLOAD_START: 9,
 } as const;
 
 export type HRecordEntry = {
@@ -48,7 +49,7 @@ export async function parseHFile(file: File): Promise<HRecordEntry[]> {
     }
 
     // patientNo (データ識別番号: index 2) が空欄の場合は除外
-    if (!columns[H_COL.DATA_ID] || columns[H_COL.DATA_ID].trim() === '') {
+    if (!columns[H_COL.PATIENT_NO] || columns[H_COL.PATIENT_NO].trim() === '') {
       continue;
     }
 

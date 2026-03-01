@@ -103,7 +103,8 @@ export function DebugTab() {
             <table className="min-w-full divide-y divide-border text-xs">
               <thead className="bg-background">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium text-text-muted">ID (Col1)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">ID (Col2)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">Ward (Col1)</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">Date (Col5)</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">Type (Col6)</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">Col0-9</th>
@@ -113,7 +114,8 @@ export function DebugTab() {
               <tbody className="divide-y divide-border">
                 {displayHRecords.map((r, i) => (
                   <tr key={i} className="hover:bg-surface-hover/50">
-                    <td className="px-3 py-1.5 whitespace-nowrap">{r.columns[1]}</td>
+                    <td className="px-3 py-1.5 whitespace-nowrap">{r.columns[2]}</td>
+                    <td className="px-3 py-1.5 font-mono">{r.columns[1]}</td>
                     <td className="px-3 py-1.5 whitespace-nowrap">{r.columns[5]}</td>
                     <td className="px-3 py-1.5 font-mono text-accent">{r.columns[6]}</td>
                     <td className="px-3 py-1.5 font-mono max-w-[200px] truncate" title={r.columns.slice(0, 10).join('|')}>
