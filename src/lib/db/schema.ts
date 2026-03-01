@@ -48,10 +48,10 @@ export const schema = `
     title TEXT NOT NULL,
     period_from DATE,
     period_to DATE,
-    evaluation_method TEXT NOT NULL DEFAULT 'necessity_1' CHECK (evaluation_method IN ('necessity_1', 'necessity_2')),
+    evaluation_method TEXT NOT NULL DEFAULT 'necessity_2' CHECK (evaluation_method IN ('necessity_1', 'necessity_2')),
     h_file_name TEXT,
     ef_file_name TEXT,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
@@ -75,13 +75,4 @@ export const schema = `
   -- (データ永続化は廃止されメモリで処理するため、対応するテーブルは削除)
   -- ==================
 
-  -- ==================
-  -- 既存環境向けのマイグレーション (v0.5対応)
-  -- ※IndexedDB等への永続化は段階的に廃止しますが、既存環境破壊回避のためマイグレーションは維持
-  -- ==================
-  ALTER TABLE record ADD COLUMN IF NOT EXISTS evaluation_method TEXT NOT NULL DEFAULT 'necessity_2' CHECK (evaluation_method IN ('necessity_1', 'necessity_2'));
-
-  -- statusカラムの制約を一度削除して再作成 ('draft' を許可するため)
-  ALTER TABLE record DROP CONSTRAINT IF EXISTS record_status_check;
-  ALTER TABLE record ADD CONSTRAINT record_status_check CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error'));
 `;
