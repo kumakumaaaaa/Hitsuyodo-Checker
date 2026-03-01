@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Building2, FileText, Calendar, Check, Loader2, ChevronDown } from 'lucide-react';
 import type { UploadedFile, EvaluationMethod, WardSetting } from './SetupStep';
+import type { DateRange } from '@/lib/file-parser/validate-data-period';
 import {
   ADMISSION_TYPES,
   getAdmissionType,
@@ -17,6 +18,8 @@ interface WardConfirmStepProps {
   evaluationMethod: EvaluationMethod;
   hFile: UploadedFile | null;
   efFile: UploadedFile | null;
+  hDateRange: DateRange | null;
+  efDateRange: DateRange | null;
   title: string;
   periodFrom: string;
   periodTo: string;
@@ -31,6 +34,8 @@ export function WardConfirmStep({
   evaluationMethod,
   hFile,
   efFile,
+  hDateRange,
+  efDateRange,
   title,
   periodFrom,
   periodTo,
@@ -182,12 +187,26 @@ export function WardConfirmStep({
             <span className="font-medium text-text-primary">{periodFrom} 〜 {periodTo}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-text-muted flex items-center gap-1"><FileText size={12} />Hファイル</span>
-            <span className="text-text-primary">{hFile?.name ?? '-'}</span>
+            <span className="text-text-muted flex items-center gap-1 min-w-0 shrink-0"><FileText size={12} />Hファイル</span>
+            <div className="text-right ml-4">
+              <p className="text-text-primary">{hFile?.name ?? '-'}</p>
+              {hDateRange && (
+                <p className="text-xs text-text-muted mt-0.5">
+                  データ期間: {hDateRange.minDate} 〜 {hDateRange.maxDate}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-text-muted flex items-center gap-1"><FileText size={12} />EFファイル</span>
-            <span className="text-text-primary">{efFile?.name ?? '-'}</span>
+            <span className="text-text-muted flex items-center gap-1 min-w-0 shrink-0"><FileText size={12} />EFファイル</span>
+            <div className="text-right ml-4">
+              <p className="text-text-primary">{efFile?.name ?? '-'}</p>
+              {efDateRange && (
+                <p className="text-xs text-text-muted mt-0.5">
+                  データ期間: {efDateRange.minDate} 〜 {efDateRange.maxDate}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -187,7 +187,7 @@ interface SetupStepProps {
   onPeriodFromChange: (p: string) => void;
   periodTo: string;
   onPeriodToChange: (p: string) => void;
-  onNext: () => void;
+  onNext: (hDateRange: import('@/lib/file-parser/validate-data-period').DateRange | null, efDateRange: import('@/lib/file-parser/validate-data-period').DateRange | null) => void;
 }
 
 export function SetupStep({
@@ -270,7 +270,7 @@ export function SetupStep({
       }
 
       // バリデーション成功、次へ
-      onNext();
+      onNext(hDateRange, efDateRange);
     } catch (e) {
       console.error(e);
       setDataPeriodError('ファイルの読み込み中にエラーが発生しました');

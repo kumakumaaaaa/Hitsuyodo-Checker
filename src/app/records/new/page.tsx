@@ -8,6 +8,7 @@ import { StepIndicator } from '@/components/records/StepIndicator';
 import { SetupStep } from '@/components/records/SetupStep';
 import { WardConfirmStep } from '@/components/records/WardConfirmStep';
 import type { UploadedFile, EvaluationMethod, WardSetting } from '@/components/records/SetupStep';
+import type { DateRange } from '@/lib/file-parser/validate-data-period';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
@@ -32,9 +33,11 @@ export default function NewRecordPage() {
   // Step 2 state
   const [extractedWardCodes, setExtractedWardCodes] = useState<string[]>([]);
   const [wards, setWards] = useState<WardSetting[]>([]);
+  const [hDateRange, setHDateRange] = useState<DateRange | null>(null);
+  const [efDateRange, setEfDateRange] = useState<DateRange | null>(null);
 
   // Step 1 → Step 2: ファイルから病棟コードを抽出して遷移
-  const handleNextToStep2 = useCallback(async () => {
+  const handleNextToStep2 = useCallback(async (hRange: DateRange | null, efRange: DateRange | null) => {
     const codes = await extractWardCodes(
       hFile?.file ?? null,
       efFile?.file ?? null
@@ -55,6 +58,8 @@ export default function NewRecordPage() {
       };
     });
     setWards(newWards);
+    setHDateRange(hRange);
+    setEfDateRange(efRange);
     setCurrentStep(2);
   }, [hFile, efFile, wards]);
 
@@ -134,6 +139,8 @@ export default function NewRecordPage() {
             evaluationMethod={evaluationMethod}
             hFile={hFile}
             efFile={efFile}
+            hDateRange={hDateRange}
+            efDateRange={efDateRange}
             title={title}
             periodFrom={periodFrom}
             periodTo={periodTo}
