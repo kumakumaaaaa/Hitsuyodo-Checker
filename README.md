@@ -50,8 +50,8 @@ http://localhost:3000 でアプリケーションにアクセスできます。
   │    └─ Step 2: 病棟設定・確認・レコード生成 (プログレスUI)
   └─ レコード詳細画面
        ├─ Tab 1: ファイル取り込み状況
-       ├─ Tab 2: 基準割合
-       ├─ Tab 3: 看護必要度詳細
+       ├─ Tab 2: 該当患者割合 ✅（病棟別基準充足率・合算表示）
+       ├─ Tab 3: 看護必要度詳細 ✅（日次テーブル・Excel出力）
        ├─ Tab 4: 分析
        └─ Tab 5: 看護必要度Ⅰ・Ⅱ比較
 ```
@@ -73,6 +73,9 @@ http://localhost:3000 でアプリケーションにアクセスできます。
 │   ├── lib/              # コアロジック・ユーティリティ機能
 │   │   ├── db/           #   PGlite (IndexedDB) スキーマ・クライアント設定
 │   │   ├── file-parser/  #   Hファイル・EFファイル解析処理
+│   │   ├── calculation/ #   スコア計算パイプライン（A/B/C項目・基準判定）
+│   │   ├── master-data/ #   入院料・判定パターンマスタ
+│   │   ├── store/       #   Zustand グローバルストア
 │   │   └── settings/     #   localStorage連携設定
 │   └── types/            # TypeScript共通型定義
 └── public/
