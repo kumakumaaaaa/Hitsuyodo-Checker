@@ -19,6 +19,7 @@ import { buildEmptyScoreMap } from '@/lib/calculation/build-empty-map';
 import { applyHFileScores } from '@/lib/calculation/apply-h-file-scores';
 import { applyEfFileCScores } from '@/lib/calculation/apply-ef-file-c-scores';
 import { applyEfFileAScores } from '@/lib/calculation/apply-ef-file-a-scores';
+import { applyCriteriaEval } from '@/lib/calculation/apply-criteria-eval';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -110,6 +111,9 @@ export default function NewRecordPage() {
           applyEfFileCScores(efRecords, scoreMap);
           applyEfFileAScores(efRecords, scoreMap);
         }
+
+        // 最後に、評価対象フラグとP1/P2/P3比率判定フラグを付与
+        applyCriteriaEval(scoreMap);
       }
 
       // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を

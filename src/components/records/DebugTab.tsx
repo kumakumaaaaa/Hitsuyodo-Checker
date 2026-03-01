@@ -258,6 +258,9 @@ export function DebugTab() {
                   <th className="px-3 py-2 text-left font-medium text-accent">cTotal</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">tarFlag</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">isTarget</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">meetsP1</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">meetsP2</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">meetsP3</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -300,6 +303,15 @@ export function DebugTab() {
                       ) : (
                         <span className="text-text-muted">No</span>
                       )}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {r.meetsP1 ? <span className="text-accent font-bold">Yes</span> : <span className="text-text-muted">No</span>}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {r.meetsP2 ? <span className="text-accent font-bold">Yes</span> : <span className="text-text-muted">No</span>}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      {r.meetsP3 ? <span className="text-accent font-bold">Yes</span> : <span className="text-text-muted">No</span>}
                     </td>
                   </tr>
                 ))}
