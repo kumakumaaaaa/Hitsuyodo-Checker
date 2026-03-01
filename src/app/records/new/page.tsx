@@ -73,11 +73,10 @@ export default function NewRecordPage() {
     setCurrentStep(2);
   }, [hFile, efFile, wards]);
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(async (onProgress?: (step: number) => void) => {
     try {
-      // 終了月の月末日を算出する（例: "2026-03" -> "2026-03-31"）
-      // Date(year, month, 0) は前月の最終日を返すため、そのままmonthの値を+1せずに現在のmonth値を渡せば
-      // 指定した月の最終日が得られる。Dateコンストラクタのmonthは0始まり。
+      // Step 1: DB保存
+      onProgress?.(1);
       const toYear = parseInt(periodTo.split('-')[0], 10);
       const toMonth = parseInt(periodTo.split('-')[1], 10);
       const lastDay = new Date(toYear, toMonth, 0).getDate();
@@ -97,11 +96,13 @@ export default function NewRecordPage() {
         })),
       });
 
-      // ---- ファイルのパース実行 ----
+      // Step 2: ファイルパース
+      onProgress?.(2);
       const hRecords = hFile ? await parseHFile(hFile.file) : null;
       const efRecords = efFile ? await parseEfFile(efFile.file) : null;
 
-      // ---- 評価マップ生成・B項目の計算 (オンメモリ) ----
+      // Step 3: 評価マップ生成・B項目計算
+      onProgress?.(3);
       let scoreMap = null;
       let dailyScores = null;
       
@@ -109,21 +110,22 @@ export default function NewRecordPage() {
         scoreMap = buildEmptyScoreMap(hRecords);
         applyHFileScores(hRecords, scoreMap);
 
-        // EFファイルが存在すれば、C項目・A項目のスコアも反映
+        // Step 4: A・C項目計算
+        onProgress?.(4);
         if (efRecords) {
           applyEfFileCScores(efRecords, scoreMap);
           applyEfFileAScores(efRecords, scoreMap);
         }
 
-        // 最後に、評価対象フラグとP1/P2/P3比率判定フラグを付与
+        // Step 5: 施設基準判定
+        onProgress?.(5);
         applyCriteriaEval(scoreMap);
 
-        // Mapを配列に変換しソートする（ローカル保持用）
+        // Step 6: 配列変換・保存
+        onProgress?.(6);
         dailyScores = convertScoreMapToArray(scoreMap);
       }
 
-      // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を
-      // メモリ上のGlobal Store(Zustand)に退避して詳細画面に引き渡す
       setSession({
         recordId,
         evaluationMethod,

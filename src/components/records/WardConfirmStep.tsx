@@ -27,7 +27,7 @@ interface WardConfirmStepProps {
   wards: WardSetting[];
   onWardsChange: (w: WardSetting[]) => void;
   onBack: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (onProgress?: (step: number) => void) => Promise<void>;
 }
 
 export function WardConfirmStep({
@@ -65,7 +65,6 @@ export function WardConfirmStep({
   function saveWardsAsDefaults() {
     const existing = getWardDefaults();
     const existingMap = new Map(existing.map((d) => [d.wardCode, d]));
-    // 現在の病棟設定で上書き（マージ）
     for (const ward of wards) {
       existingMap.set(ward.wardCode, {
         wardCode: ward.wardCode,
@@ -78,23 +77,16 @@ export function WardConfirmStep({
 
   async function handleConfirm() {
     setIsProcessing(true);
-    setProgressStep(1); // バリデーション開始
+    setProgressStep(1);
 
     try {
       if (saveAsDefault) {
         saveWardsAsDefaults();
       }
 
-      // 擬似的なステップ進行: 保存中
-      setTimeout(() => setProgressStep(2), 800);
-      
-      await onConfirm();
-      
-      // 擬似的なステップ進行: 演算中〜完了
-      setProgressStep(3);
-      setTimeout(() => {
-        setIsComplete(true);
-      }, 1000);
+      await onConfirm((step) => setProgressStep(step));
+
+      setIsComplete(true);
     } catch (error: any) {
       console.error(error);
       alert('エラーが発生しました: ' + (error.message || '不明なエラー'));
@@ -102,6 +94,15 @@ export function WardConfirmStep({
       setProgressStep(0);
     }
   }
+
+  const PROGRESS_STEPS = [
+    { step: 1, label: 'レコード・病棟設定の保存' },
+    { step: 2, label: 'H/EFファイルのパース' },
+    { step: 3, label: 'B項目スコアの計算' },
+    { step: 4, label: 'A項目・C項目スコアの計算' },
+    { step: 5, label: '施設基準（P1/P2/P3）の判定' },
+    { step: 6, label: '結果データの生成・保存' },
+  ];
 
   // 処理中/完了画面
   if (isProcessing) {
@@ -120,7 +121,7 @@ export function WardConfirmStep({
             <div className="flex flex-col items-center justify-center text-center">
               <Loader2 size={40} className="animate-spin text-accent mb-4" />
               <h3 className="text-lg font-semibold text-text-primary mb-2">レコードを生成中...</h3>
-              <p className="text-sm text-text-secondary">ファイルの検証・データの演算を行っています。<br />画面を閉じずにしばらくお待ちください。</p>
+              <p className="text-sm text-text-secondary">ファイルの解析・スコア計算を行っています。<br />画面を閉じずにしばらくお待ちください。</p>
             </div>
 
             <div className="space-y-3 rounded-xl border border-border bg-surface p-5">
@@ -128,35 +129,32 @@ export function WardConfirmStep({
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-text-primary">処理状況</span>
                   <span className="text-accent">
-                    {progressStep === 1 && '1/3 バリデーション確認中...'}
-                    {progressStep === 2 && '2/3 データ保存中...'}
-                    {progressStep === 3 && '3/3 評価基準を演算中...'}
+                    {progressStep}/{PROGRESS_STEPS.length} {PROGRESS_STEPS.find(s => s.step === progressStep)?.label ?? ''}
                   </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-background relative">
-                  <div className="absolute left-0 top-0 h-full w-[100%] animate-loading-bar bg-accent"></div>
+                  <div
+                    className="absolute left-0 top-0 h-full bg-accent transition-all duration-500 ease-out rounded-full"
+                    style={{ width: `${(progressStep / PROGRESS_STEPS.length) * 100}%` }}
+                  />
                 </div>
               </div>
               
               <div className="mt-4 space-y-2 text-sm text-text-secondary">
-                <div className="flex items-center gap-2">
-                  {progressStep > 1 ? <Check size={14} className="text-accent" /> : <Loader2 size={14} className="animate-spin text-accent" />}
-                  <span className={progressStep >= 1 ? 'text-text-primary font-medium' : 'text-text-muted'}>
-                    ファイル・設定のバリデーション
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {progressStep > 2 ? <Check size={14} className="text-accent" /> : progressStep === 2 ? <Loader2 size={14} className="animate-spin text-accent" /> : <div className="h-3.5 w-3.5 rounded-full border border-border" />}
-                  <span className={progressStep >= 2 ? 'text-text-primary font-medium' : 'text-text-muted'}>
-                    レコードと病棟設定の保存
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {progressStep > 3 ? <Check size={14} className="text-accent" /> : progressStep === 3 ? <Loader2 size={14} className="animate-spin text-accent" /> : <div className="h-3.5 w-3.5 rounded-full border border-border" />}
-                  <span className={progressStep >= 3 ? 'text-text-primary font-medium' : 'text-text-muted'}>
-                    評価基準の初回演算
-                  </span>
-                </div>
+                {PROGRESS_STEPS.map((ps) => (
+                  <div key={ps.step} className="flex items-center gap-2">
+                    {progressStep > ps.step ? (
+                      <Check size={14} className="text-accent" />
+                    ) : progressStep === ps.step ? (
+                      <Loader2 size={14} className="animate-spin text-accent" />
+                    ) : (
+                      <div className="h-3.5 w-3.5 rounded-full border border-border" />
+                    )}
+                    <span className={progressStep >= ps.step ? 'text-text-primary font-medium' : 'text-text-muted'}>
+                      {ps.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
