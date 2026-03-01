@@ -196,12 +196,51 @@ export function SetupStep({
   periodTo, onPeriodToChange,
   onNext,
 }: SetupStepProps) {
+  const [periodError, setPeriodError] = useState<string | null>(null);
+
+  // 対象期間のバリデーション
+  const validatePeriod = useCallback((from: string, to: string) => {
+    if (!from || !to) {
+      setPeriodError(null);
+      return false;
+    }
+
+    const fromDate = new Date(`${from}-01`);
+    const MathToDate = new Date(`${to}-01`);
+
+    if (fromDate > MathToDate) {
+      setPeriodError('終了月は開始月以降を指定してください');
+      return false;
+    }
+
+    // 期間の月数計算: (年差 * 12) + 月差 + 1 (開始月を含むため)
+    const monthsDiff = (MathToDate.getFullYear() - fromDate.getFullYear()) * 12 + (MathToDate.getMonth() - fromDate.getMonth()) + 1;
+    if (monthsDiff > 3) {
+      setPeriodError('集計対象期間は最大3ヶ月以内までとしてください');
+      return false;
+    }
+
+    setPeriodError(null);
+    return true;
+  }, []);
+
+  const handlePeriodFromChange = (p: string) => {
+    onPeriodFromChange(p);
+    validatePeriod(p, periodTo);
+  };
+
+  const handlePeriodToChange = (p: string) => {
+    onPeriodToChange(p);
+    validatePeriod(periodFrom, p);
+  };
+
+  const isPeriodValid = periodFrom && periodTo && !periodError;
+
   const canProceed =
     hFile !== null &&
     efFile !== null &&
     title.trim() !== '' &&
-    periodFrom !== '' &&
-    periodTo !== '';
+    isPeriodValid;
 
   return (
     <div className="mx-auto max-w-2xl animate-slide-up space-y-7">
@@ -265,9 +304,11 @@ export function SetupStep({
             max="2099-12"
             onChange={(e) => {
               const val = e.target.value;
-              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodFromChange(val);
+              if (!val || /^\d{4}-\d{2}$/.test(val)) handlePeriodFromChange(val);
             }}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className={`flex-1 rounded-xl border bg-surface px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+              periodError ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'
+            }`}
           />
           <span className="text-text-muted text-sm">〜</span>
           <input
@@ -276,11 +317,19 @@ export function SetupStep({
             max="2099-12"
             onChange={(e) => {
               const val = e.target.value;
-              if (!val || /^\d{4}-\d{2}$/.test(val)) onPeriodToChange(val);
+              if (!val || /^\d{4}-\d{2}$/.test(val)) handlePeriodToChange(val);
             }}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className={`flex-1 rounded-xl border bg-surface px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/20 ${
+              periodError ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'
+            }`}
           />
         </div>
+        {periodError && (
+          <p className="mt-1.5 flex items-start gap-1 text-xs text-danger">
+            <AlertCircle size={12} className="shrink-0 mt-0.5" />
+            {periodError}
+          </p>
+        )}
       </section>
 
       {/* ファイルアップロード */}

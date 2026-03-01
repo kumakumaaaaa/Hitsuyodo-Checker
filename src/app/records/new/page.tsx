@@ -60,10 +60,18 @@ export default function NewRecordPage() {
 
   const handleConfirm = useCallback(async () => {
     try {
+      // 終了月の月末日を算出する（例: "2026-03" -> "2026-03-31"）
+      // Date(year, month, 0) は前月の最終日を返すため、そのままmonthの値を+1せずに現在のmonth値を渡せば
+      // 指定した月の最終日が得られる。Dateコンストラクタのmonthは0始まり。
+      const toYear = parseInt(periodTo.split('-')[0], 10);
+      const toMonth = parseInt(periodTo.split('-')[1], 10);
+      const lastDay = new Date(toYear, toMonth, 0).getDate();
+      const periodToFormatted = `${periodTo}-${lastDay.toString().padStart(2, '0')}`;
+
       const recordId = await recordRepository.create({
         title: title || `${periodFrom}分`,
         periodFrom: `${periodFrom}-01`,
-        periodTo: `${periodTo}-01`,
+        periodTo: periodToFormatted,
         evaluationMethod,
         hFileName: hFile?.name ?? '',
         efFileName: efFile?.name ?? '',
