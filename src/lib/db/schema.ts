@@ -72,32 +72,12 @@ export const schema = `
 
   -- ==================
   -- データ系
+  -- (データ永続化は廃止されメモリで処理するため、対応するテーブルは削除)
   -- ==================
 
-  CREATE TABLE IF NOT EXISTS patient (
-    id SERIAL PRIMARY KEY,
-    record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
-    patient_no TEXT NOT NULL,
-    ward_code TEXT,
-    admission_date DATE,
-    discharge_date DATE
-  );
-
-  CREATE TABLE IF NOT EXISTS daily_nursing_evaluation (
-    id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
-    eval_date DATE NOT NULL,
-    a_score_total INTEGER DEFAULT 0,
-    a_scores_detail JSONB,
-    b_score_total INTEGER DEFAULT 0,
-    b_scores_detail JSONB,
-    c_score INTEGER DEFAULT 0,
-    c_receipt_code TEXT,
-    is_severe BOOLEAN DEFAULT FALSE
-  );
-
   -- ==================
-  -- 既存IndexedDB環境向けのマイグレーション (v0.5対応)
+  -- 既存環境向けのマイグレーション (v0.5対応)
+  -- ※IndexedDB等への永続化は段階的に廃止しますが、既存環境破壊回避のためマイグレーションは維持
   -- ==================
   ALTER TABLE record ADD COLUMN IF NOT EXISTS evaluation_method TEXT NOT NULL DEFAULT 'necessity_2' CHECK (evaluation_method IN ('necessity_1', 'necessity_2'));
 

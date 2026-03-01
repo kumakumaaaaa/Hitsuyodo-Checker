@@ -155,32 +155,8 @@ erDiagram
     %% ==============================
     %% Layer 3: データ系（取込データ）
     %% ==============================
-
-    patient {
-        int id PK
-        int record_id FK
-        string patient_no "患者番号"
-        string ward_code "病棟コード"
-        date admission_date "入院日"
-        date discharge_date "退院日（NULLable）"
-    }
-
-    daily_nursing_evaluation {
-        int id PK
-        int patient_id FK
-        date eval_date "評価日"
-        int a_score_total "A項目合計"
-        jsonb a_scores_detail "A項目個別"
-        int b_score_total "B項目合計"
-        jsonb b_scores_detail "B項目個別"
-        int c_score "C項目（0 or 1）"
-        string c_receipt_code "該当レセプト電算コード"
-        boolean is_severe "重症該当フラグ"
-    }
-
-    %% リレーション: レコード → 患者 → 日次評価
-    record ||--o{ patient : "has"
-    patient ||--o{ daily_nursing_evaluation : "has"
+    %% ※今後の開発では分析データをDBに永続化しない方針のため、
+    %% patient テーブルや daily_nursing_evaluation テーブルの定義はここから削除済。
 
     %% ==============================
     %% Layer 4: ユーザー系（将来用）
@@ -220,10 +196,7 @@ erDiagram
 
 ### データ系
 
-| テーブル名 | 用途 | 備考 |
-|-----------|------|------|
-| patient | Hファイルから取り込んだ患者基本情報 | recordに紐付く |
-| daily_nursing_evaluation | EFファイルから取り込んだ日次評価データ | A・B項目は合計スコアと個別スコア（JSONB）を両方保持。C項目は判定結果（0 or 1）のみ保存 |
+※データ系テーブル（patient, daily_nursing_evaluation等）はDBに永続化せず全てオンメモリで処理する方針となったため定義を削除。
 
 ### ユーザー系
 
