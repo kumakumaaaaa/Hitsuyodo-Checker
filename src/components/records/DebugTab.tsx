@@ -10,8 +10,7 @@ export function DebugTab() {
   const [activeSubTab, setActiveSubTab] = useState<DebugTabId>('h-file');
   const hRecords = useRecordSessionStore((s) => s.hRecords);
   const efRecords = useRecordSessionStore((s) => s.efRecords);
-  const scoreMap = useRecordSessionStore((s) => s.scoreMap);
-  const scoreList = scoreMap ? Array.from(scoreMap.values()) : null;
+  const dailyScores = useRecordSessionStore((s) => s.dailyScores);
 
   const [hPage, setHPage] = useState(1);
   const [efPage, setEfPage] = useState(1);
@@ -20,11 +19,11 @@ export function DebugTab() {
 
   const totalHPages = Math.ceil((hRecords?.length || 0) / PAGE_SIZE);
   const totalEfPages = Math.ceil((efRecords?.length || 0) / PAGE_SIZE);
-  const totalScorePages = Math.ceil((scoreList?.length || 0) / PAGE_SIZE);
+  const totalScorePages = Math.ceil((dailyScores?.length || 0) / PAGE_SIZE);
 
   const displayHRecords = hRecords?.slice((hPage - 1) * PAGE_SIZE, hPage * PAGE_SIZE) || [];
   const displayEfRecords = efRecords?.slice((efPage - 1) * PAGE_SIZE, efPage * PAGE_SIZE) || [];
-  const displayScoreRecords = scoreList?.slice((scorePage - 1) * PAGE_SIZE, scorePage * PAGE_SIZE) || [];
+  const displayScoreRecords = dailyScores?.slice((scorePage - 1) * PAGE_SIZE, scorePage * PAGE_SIZE) || [];
 
   return (
     <div className="space-y-6">
@@ -63,7 +62,7 @@ export function DebugTab() {
           >
             <div className="flex items-center gap-2">
               {tab === 'h-file' ? <FileText size={16} /> : tab === 'ef-file' ? <Database size={16} /> : <FileText size={16} />}
-              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : tab === 'ef-file' ? 'EFファイル (EfActEntry[])' : 'スコア計算結果 (GenIIDailyScoreMap)'}
+              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : tab === 'ef-file' ? 'EFファイル (EfActEntry[])' : 'スコア計算結果 (GenIIDailyScore[])'}
             </div>
           </button>
         ))}

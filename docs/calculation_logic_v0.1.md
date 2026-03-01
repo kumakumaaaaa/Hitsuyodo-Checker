@@ -58,7 +58,7 @@ Step 2: 空の評価マップを作る
   Hファイルの全行から
   「患者番号 × 実施日付 × 病棟コード」のユニーク組み合わせを抽出
   → 各組み合わせに対して、スコアが全部0の空の GenIIDailyScore を作る
-  → Map<string, DailyEvaluation> に格納
+  → Map<string, GenIIDailyScore> に格納
      キー = "患者番号_実施日付"
 
 
@@ -94,12 +94,14 @@ Step 6: 施設基準等を満たす該当患者の割合判定を行う
 
 Step 7: 配列に変換して返す
 ━━━━━━━━━━━━━━━━━━━━━━
-  Map.values() → GenIIDailyScore[]
+  convertScoreMapToArray(scoreMap) → GenIIDailyScore[]
+  患者番号×日付でソートし、Zustand Global Store に dailyScores として保持
+  ※ プロトタイプ版ではオンメモリのためリロードで消失する
 ```
 
 ---
 
-## 3. 評価マップ（評価マップ）の生成方針
+## 3. 評価マップの生成方針
 
 ### 元データ
 
@@ -408,7 +410,7 @@ export type GenIIDailyScore = {
   b3_assist: number;  // 口腔清潔の介助 (0/1)
   b4_assist: number;  // 食事摂取の介助 (0/1)
   b5_assist: number;  // 衣服の着脱の介助 (0/1)
-  bTotal: number;     // 🔲 算出マトリクス未確定（介助なし=0点の掛け算ルールあり）
+  bTotal: number;     // 介助なし=0点などのルールを適用したB項目合計
 
   // ========== C項目（EFファイルから / 有効期間展開後） ==========
   c15: number;    // 開頭手術 (0/1)       有効期間: 11日間
@@ -419,7 +421,7 @@ export type GenIIDailyScore = {
   c20: number;    // 全身麻酔・脊椎麻酔 (0/1) 有効期間: 5日間
   c21_1: number;  // 経皮的血管内治療 (0/1)   有効期間: 4日間
   c21_2: number;  // 経皮的心筋焼灼術等 (0/1) 有効期間: 4日間
-  c21_3: number;  // 侵襲的な消化評価マップ治療 (0/1) 有効期間: 4日間
+  c21_3: number;  // 侵襲的な消化器治療 (0/1) 有効期間: 4日間
   c22: number;    // 別に定める検査 (0/1) 有効期間: 2日間
   c23: number;    // 別に定める手術 (0/1) 有効期間: 5日間
   cTotal: number; // C15〜C23の合計値（複数項目が重複した場合、1以上になり得る）
@@ -433,9 +435,9 @@ export type GenIIDailyScore = {
 
 #### 初期化
 
-`buildEmptyEvaluationMap` で空の `GenIIDailyScore` を生成する際、全数値フィールドは `0`、全 boolean フィールドは `false` で初期化する。キー情報（patientNo, evalDate, wardCode, admissionDate, dischargeDate）は H ファイルから取得。
+`buildEmptyScoreMap` で空の `GenIIDailyScore` を生成する際、全数値フィールドは `0`、全 boolean フィールドは `false` で初期化する。キー情報（patientNo, evalDate, wardCode, admissionDate, dischargeDate）は H ファイルから取得。
 
-#### bTotal の算出について（🔲 未確定）
+#### bTotal の算出について
 
 B2〜B5 は「患者の状態」×「介助の実施」の掛け算構造。介助の実施が `0`（なし）の場合、患者の状態が要介助でも得点は `0` になる。
 

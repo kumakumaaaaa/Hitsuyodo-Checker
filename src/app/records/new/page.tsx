@@ -20,6 +20,7 @@ import { applyHFileScores } from '@/lib/calculation/apply-h-file-scores';
 import { applyEfFileCScores } from '@/lib/calculation/apply-ef-file-c-scores';
 import { applyEfFileAScores } from '@/lib/calculation/apply-ef-file-a-scores';
 import { applyCriteriaEval } from '@/lib/calculation/apply-criteria-eval';
+import { convertScoreMapToArray } from '@/lib/calculation/convert-to-array';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -102,6 +103,8 @@ export default function NewRecordPage() {
 
       // ---- 評価マップ生成・B項目の計算 (オンメモリ) ----
       let scoreMap = null;
+      let dailyScores = null;
+      
       if (hRecords) {
         scoreMap = buildEmptyScoreMap(hRecords);
         applyHFileScores(hRecords, scoreMap);
@@ -114,6 +117,9 @@ export default function NewRecordPage() {
 
         // 最後に、評価対象フラグとP1/P2/P3比率判定フラグを付与
         applyCriteriaEval(scoreMap);
+
+        // Mapを配列に変換しソートする（ローカル保持用）
+        dailyScores = convertScoreMapToArray(scoreMap);
       }
 
       // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を
@@ -128,6 +134,7 @@ export default function NewRecordPage() {
         hRecords,
         efRecords,
         scoreMap,
+        dailyScores,
       });
 
       setTimeout(() => {

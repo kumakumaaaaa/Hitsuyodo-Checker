@@ -1,6 +1,6 @@
 # 看護必要度管理システム ER図
 
-**Version:** 0.5  
+**Version:** 0.6  
 **作成日:** 2026年2月  
 **ステータス:** ドラフト（開発中）
 
@@ -15,6 +15,7 @@
 | 0.3 | 2026年2月 | `ac_item_code_master` を `general_ward_ac_item_code_master` にリネーム（一般病棟用マスタであることを明示） |
 | 0.4 | 2026年2月 | 入院料マスタを3テーブル構成に再設計（`judgment_pattern_master` + `admission_type_master` + `admission_type_criteria`）。`record` に `evaluation_method` を追加。`ward_setting` から `nursing_need_type` を削除 |
 | 0.5 | 2026年2月 | `ward_default_setting` テーブルを追加（localStorage永続化の論理モデル）。`ward_setting.ward_name` を必須に変更 |
+| 0.6 | 2026年3月 | データ系テーブルの注記を更新。中間データ（`GenIIDailyScore[]` 等）はオンメモリ処理のためER図の対象外であることを明記。未決事項を整理 |
 
 ---
 
@@ -194,9 +195,9 @@ erDiagram
 | ward_setting | レコードごとの病棟コード↔入院料の紐付け | 病棟コードはファイルから自動抽出。名称は任意入力 |
 | ward_kasan_setting | 病棟設定と加算の中間テーブル | 1病棟に複数加算が適用される一対多を解消 |
 
-### データ系
+### データ系（オンメモリ）
 
-※データ系テーブル（patient, daily_nursing_evaluation等）はDBに永続化せず全てオンメモリで処理する方針となったため定義を削除。
+※ 計算パイプラインで生成される中間データ（`HRecordEntry[]`, `EfActEntry[]`, `GenIIDailyScore[]` 等）はDBに永続化せず、全てオンメモリ（Zustand Global Store）で処理する方針となったため、ER図には含めない。これらの型定義は `calculation_logic_v0.1.md` および `src/types/daily-score.ts` を参照。
 
 ### ユーザー系
 
@@ -212,9 +213,9 @@ erDiagram
 
 **入院料マスタの判定パターン:** `admission_type_criteria` を中間テーブルとして、1つの入院料に複数の判定基準を紐付けられる。例えば急性期一般入院料1は P1（基準①）と P2（基準②）の両方を満たす必要がある。
 
-**A・B項目スコアの保存方針:** 合計スコア（`a_score_total`）と個別スコア（`a_scores_detail` JSONB）の両方を保持する。合計は集計クエリの高速化のため、個別は項目別ドリルダウンのために必要。
+**A・B項目スコアの保存方針:** A・B項目の各スコアは `GenIIDailyScore` 型にフラットに保持されるが、これはDBには永続化しないオンメモリの実行時データである。詳細は `calculation_logic_v0.1.md` を参照。
 
-**C項目の保存方針:** 判定結果（0 or 1）のみ保存。判定根拠のレセプト電算コードは `c_receipt_code` として合わせて保存する。
+**C項目の保存方針:** A項目と同様、`GenIIDailyScore` にフラットに保持（オンメモリ）。判定結果（0 or 1）のみ保持し、判定根拠のレセプト電算コードは元のEFファイルを参照することでトレース可能。
 
 **診療報酬改定への対応:** `kasan_master` には `effective_from` / `effective_to` を設けており、改定前後のデータが混在する期間も正しく閾値を参照できる。
 
@@ -226,8 +227,8 @@ erDiagram
 
 | # | 事項 | ステータス |
 |---|------|-----------|
-| 1 | A・B項目の個別スコアフィールド名（EFファイルのフィールド仕様確認後に確定） | 要確認 |
-| 2 | `daily_nursing_evaluation` の `is_severe` フラグの判定基準（入院料ごとに異なる可能性） | 要設計 |
+| 1 | データの永続化方式（現状オンメモリ。将来IndexedDB等への移行を検討） | 許容済（プロトタイプ版） |
+| 2 | `daily_nursing_evaluation` の `is_severe` フラグ → 現在は `meetsP1/P2/P3` としてオンメモリで実装済 | 完了 |
 | 3 | 削除（オンメモリ処理移行によりJSONB型等のDB依存の考慮不要） | — |
 | 4 | 判定パターン P1〜P7 の条件式を構造化データとして保持するか（将来の自動判定エンジン用） | 要設計 |
 

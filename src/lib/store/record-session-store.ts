@@ -15,6 +15,7 @@ interface RecordSessionState {
   hRecords: HRecordEntry[] | null;
   efRecords: EfActEntry[] | null;
   scoreMap: Map<string, GenIIDailyScore> | null;
+  dailyScores: GenIIDailyScore[] | null;
   
   // セッションを更新する（レコード生成完了後に呼ぶ）
   setSession: (data: {
@@ -27,6 +28,7 @@ interface RecordSessionState {
     hRecords: HRecordEntry[] | null;
     efRecords: EfActEntry[] | null;
     scoreMap: Map<string, GenIIDailyScore> | null;
+    dailyScores: GenIIDailyScore[] | null;
   }) => void;
   
   // セッションをクリアする
@@ -48,6 +50,7 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
   hRecords: null,
   efRecords: null,
   scoreMap: null,
+  dailyScores: null,
 
   setSession: (data) => set({ ...data }),
   clearSession: () => set({
@@ -60,5 +63,6 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
     hRecords: null,
     efRecords: null,
     scoreMap: null,
+    dailyScores: null,
   }),
 }));
