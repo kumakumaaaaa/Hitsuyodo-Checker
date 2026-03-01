@@ -22,22 +22,22 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border bg-header-bg/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-[rgb(60,60,60)] bg-header-bg shadow-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           {/* ロゴ */}
           <Link
             href="/"
             className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/20 text-accent">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>
-            <span className="hidden text-sm font-semibold text-text-primary sm:inline">
+            <span className="hidden text-sm font-semibold text-white sm:inline">
               看護必要度アナリシスソフト
             </span>
-            <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent hidden sm:inline">
+            <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-medium text-accent hidden sm:inline">
               Beta
             </span>
           </Link>
@@ -47,7 +47,7 @@ export function Header() {
             {/* 設定アイコン */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               title="設定"
             >
               <Settings size={18} />
@@ -57,9 +57,9 @@ export function Header() {
             <div ref={accountRef} className="relative">
               <button
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+                className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
               >
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/25 text-xs font-bold text-accent">
                   G
                 </div>
                 <ChevronDown size={14} className={`transition-transform ${isAccountOpen ? 'rotate-180' : ''}`} />

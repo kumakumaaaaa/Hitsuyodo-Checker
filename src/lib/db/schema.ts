@@ -1,5 +1,5 @@
 /**
- * ER図 v0.3 に基づくテーブル定義
+ * ER図 v0.5 に基づくテーブル定義
  * CREATE IF NOT EXISTS で冪等に実行可能
  */
 export const schema = `
@@ -48,9 +48,10 @@ export const schema = `
     title TEXT NOT NULL,
     period_from DATE,
     period_to DATE,
+    evaluation_method TEXT NOT NULL DEFAULT 'necessity_2' CHECK (evaluation_method IN ('necessity_1', 'necessity_2')),
     h_file_name TEXT,
     ef_file_name TEXT,
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'done', 'error')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'processing', 'done', 'error')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
@@ -59,9 +60,8 @@ export const schema = `
     id SERIAL PRIMARY KEY,
     record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
     ward_code TEXT NOT NULL,
-    ward_name TEXT,
-    admission_type_id INTEGER REFERENCES admission_type_master(id),
-    nursing_need_type INTEGER CHECK (nursing_need_type IN (1, 2))
+    ward_name TEXT NOT NULL,
+    admission_type_id INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS ward_kasan_setting (
@@ -72,27 +72,7 @@ export const schema = `
 
   -- ==================
   -- データ系
+  -- (データ永続化は廃止されメモリで処理するため、対応するテーブルは削除)
   -- ==================
 
-  CREATE TABLE IF NOT EXISTS patient (
-    id SERIAL PRIMARY KEY,
-    record_id INTEGER NOT NULL REFERENCES record(id) ON DELETE CASCADE,
-    patient_no TEXT NOT NULL,
-    ward_code TEXT,
-    admission_date DATE,
-    discharge_date DATE
-  );
-
-  CREATE TABLE IF NOT EXISTS daily_nursing_evaluation (
-    id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
-    eval_date DATE NOT NULL,
-    a_score_total INTEGER DEFAULT 0,
-    a_scores_detail JSONB,
-    b_score_total INTEGER DEFAULT 0,
-    b_scores_detail JSONB,
-    c_score INTEGER DEFAULT 0,
-    c_receipt_code TEXT,
-    is_severe BOOLEAN DEFAULT FALSE
-  );
 `;

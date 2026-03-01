@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { RecordTable } from '@/components/home/RecordTable';
 import { CreateRecordButton } from '@/components/home/CreateRecordButton';
@@ -48,14 +49,14 @@ export default function HomePage() {
     }
   };
 
+  const router = useRouter();
+
   const handleRowClick = (id: number) => {
-    // フェーズ2: レコード詳細画面への遷移
-    console.log('レコード詳細画面へ遷移 (フェーズ2で実装):', id);
+    router.push(`/records/${id}`);
   };
 
   const handleCreateClick = () => {
-    // フェーズ2: 新規レコード作成フローの開始
-    console.log('新規レコード作成 (フェーズ2で実装)');
+    router.push('/records/new');
   };
 
   return (

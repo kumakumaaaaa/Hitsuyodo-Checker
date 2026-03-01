@@ -1,5 +1,5 @@
 import { getDB } from '../index';
-import type { Record as RecordType, RecordListItem, FulfillmentStatus } from '@/types';
+import type { Record as RecordType, RecordListItem, RecordDetail, WardSettingDetail, FulfillmentStatus } from '@/types';
 
 /**
  * レコードリポジトリ
@@ -61,6 +61,62 @@ export const recordRepository = {
   },
 
   /**
+   * レコード + 病棟設定を一括取得（詳細画面用）
+   */
+  async findByIdWithWards(id: number): Promise<RecordDetail | null> {
+    const db = await getDB();
+
+    // レコード本体
+    const recordResult = await db.query<{
+      id: number;
+      title: string;
+      period_from: string;
+      period_to: string;
+      evaluation_method: string;
+      h_file_name: string | null;
+      ef_file_name: string | null;
+      status: string;
+      created_at: string;
+      updated_at: string;
+    }>(
+      `SELECT id, title, period_from::text, period_to::text, evaluation_method,
+              h_file_name, ef_file_name, status, created_at::text, updated_at::text
+       FROM record WHERE id = $1`,
+      [id]
+    );
+    if (recordResult.rows.length === 0) return null;
+    const record = recordResult.rows[0];
+
+    // 病棟設定
+    const wardResult = await db.query<{
+      id: number;
+      ward_code: string;
+      ward_name: string;
+      admission_type_id: number | null;
+    }>(
+      `SELECT id, ward_code, ward_name, admission_type_id
+       FROM ward_setting WHERE record_id = $1 ORDER BY id`,
+      [id]
+    );
+
+    // 入院料名はTS静的データから解決
+    const { getAdmissionType } = await import('@/lib/master-data/admission-type-data');
+    const wards: WardSettingDetail[] = wardResult.rows.map((w) => ({
+      id: w.id,
+      ward_code: w.ward_code,
+      ward_name: w.ward_name,
+      admission_type_id: w.admission_type_id,
+      admission_type_name: w.admission_type_id ? (getAdmissionType(w.admission_type_id)?.name ?? null) : null,
+    }));
+
+    return {
+      ...record,
+      status: record.status as RecordDetail['status'],
+      wards,
+    };
+  },
+
+  /**
    * レコードを削除
    */
   async delete(id: number): Promise<void> {
@@ -77,6 +133,41 @@ export const recordRepository = {
       'UPDATE record SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [title, id]
     );
+  },
+
+  /**
+   * レコードを新規作成（record + ward_setting を一括INSERT）
+   */
+  async create(data: {
+    title: string;
+    periodFrom: string;
+    periodTo: string;
+    evaluationMethod: string;
+    hFileName: string;
+    efFileName: string;
+    wards: { wardCode: string; wardName: string; admissionTypeId: number | null }[];
+  }): Promise<number> {
+    const db = await getDB();
+
+    // レコード本体を挿入
+    const result = await db.query<{ id: number }>(
+      `INSERT INTO record (title, period_from, period_to, evaluation_method, h_file_name, ef_file_name, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'draft')
+       RETURNING id`,
+      [data.title, data.periodFrom, data.periodTo, data.evaluationMethod, data.hFileName, data.efFileName]
+    );
+    const recordId = result.rows[0].id;
+
+    // 病棟設定を挿入
+    for (const ward of data.wards) {
+      await db.query(
+        `INSERT INTO ward_setting (record_id, ward_code, ward_name, admission_type_id)
+         VALUES ($1, $2, $3, $4)`,
+        [recordId, ward.wardCode, ward.wardName, ward.admissionTypeId]
+      );
+    }
+
+    return recordId;
   },
 };
 
