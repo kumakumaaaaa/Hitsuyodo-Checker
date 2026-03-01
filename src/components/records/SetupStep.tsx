@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, FileText, X, AlertCircle, Calendar } from 'lucide-react';
+import { Upload, FileText, X, AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { extractDateRangeFromFile, validateDateRangeAgainstPeriod } from '@/lib/file-parser/validate-data-period';
 
 /* ===== 型定義 ===== */
 export type EvaluationMethod = 'necessity_1' | 'necessity_2';
@@ -197,6 +198,8 @@ export function SetupStep({
   onNext,
 }: SetupStepProps) {
   const [periodError, setPeriodError] = useState<string | null>(null);
+  const [dataPeriodError, setDataPeriodError] = useState<string | null>(null);
+  const [isValidatingFiles, setIsValidatingFiles] = useState(false);
 
   // 対象期間のバリデーション
   const validatePeriod = useCallback((from: string, to: string) => {
@@ -221,6 +224,7 @@ export function SetupStep({
     }
 
     setPeriodError(null);
+    setDataPeriodError(null); // 対象期間が変わったらデータエラーもリセット
     return true;
   }, []);
 
@@ -232,6 +236,39 @@ export function SetupStep({
   const handlePeriodToChange = (p: string) => {
     onPeriodToChange(p);
     validatePeriod(periodFrom, p);
+  };
+
+  const handleNextClick = async () => {
+    if (!hFile || !efFile || !periodFrom || !periodTo) return;
+    
+    setIsValidatingFiles(true);
+    setDataPeriodError(null);
+
+    try {
+      // Hファイルのデータ期間検証
+      const hDateRange = await extractDateRangeFromFile(hFile.file, 'H');
+      const hValRes = validateDateRangeAgainstPeriod(hDateRange, periodFrom, periodTo, 'Hファイル');
+      if (!hValRes.isValid) {
+        setDataPeriodError(hValRes.error || '不明なエラー');
+        return;
+      }
+
+      // EFファイルのデータ期間検証
+      const efDateRange = await extractDateRangeFromFile(efFile.file, 'EF');
+      const efValRes = validateDateRangeAgainstPeriod(efDateRange, periodFrom, periodTo, 'EFファイル');
+      if (!efValRes.isValid) {
+        setDataPeriodError(efValRes.error || '不明なエラー');
+        return;
+      }
+
+      // バリデーション成功、次へ
+      onNext();
+    } catch (e) {
+      console.error(e);
+      setDataPeriodError('ファイルの読み込み中にエラーが発生しました');
+    } finally {
+      setIsValidatingFiles(false);
+    }
   };
 
   const isPeriodValid = periodFrom && periodTo && !periodError;
@@ -348,13 +385,26 @@ export function SetupStep({
       </section>
 
       {/* 次へ */}
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end pt-2 flex-col items-end gap-3">
+        {dataPeriodError && (
+          <div className="rounded border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm font-medium text-danger break-words max-w-full">
+            <AlertCircle size={16} className="inline mr-1.5 -mt-0.5" />
+            {dataPeriodError}
+          </div>
+        )}
         <button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="rounded-xl bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+          onClick={handleNextClick}
+          disabled={!canProceed || isValidatingFiles}
+          className="rounded-xl flex items-center justify-center gap-2 bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
         >
-          次へ：病棟設定
+          {isValidatingFiles ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              ファイル内容を確認中...
+            </>
+          ) : (
+            '次へ：病棟設定'
+          )}
         </button>
       </div>
     </div>
