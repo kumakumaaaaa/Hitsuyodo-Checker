@@ -9,62 +9,62 @@ import type { GenIIDailyScore } from '@/types/daily-score';
 const PAGE_SIZE = 100;
 
 /** テーブル列定義 */
-const COLUMNS: { header: string; shortHeader?: string; key: keyof GenIIDailyScore; group: string; isTotal?: boolean }[] = [
+const COLUMNS: { header: string; key: keyof GenIIDailyScore; group: string; isTotal?: boolean }[] = [
   // 患者基本情報
   { header: '病棟コード', key: 'wardCode', group: 'info' },
   { header: 'データ識別番号', key: 'patientNo', group: 'info' },
   { header: '退院年月日', key: 'dischargeDate', group: 'info' },
   { header: '入院年月日', key: 'admissionDate', group: 'info' },
   { header: '実施年月日', key: 'evalDate', group: 'info' },
-  { header: '出力コード', key: 'tarFlag', group: 'info' },
-  // A項目
-  { header: 'A1 創傷処置', shortHeader: 'A1', key: 'a1', group: 'a' },
-  { header: 'A2 呼吸ケア', shortHeader: 'A2', key: 'a2', group: 'a' },
-  { header: 'A3 注射薬剤3種類以上', shortHeader: 'A3', key: 'a3', group: 'a' },
-  { header: 'A4 シリンジポンプ', shortHeader: 'A4', key: 'a4', group: 'a' },
-  { header: 'A5 輸血・血液製剤', shortHeader: 'A5', key: 'a5', group: 'a' },
-  { header: 'A6 専門的な治療・処置', shortHeader: 'A6', key: 'a6', group: 'a' },
-  { header: 'A7 緊急に入院を必要とする状態', shortHeader: 'A7', key: 'a7', group: 'a' },
-  { header: 'A得点', key: 'aTotal', group: 'a', isTotal: true },
-  // B項目
-  { header: 'B1 寝返り', shortHeader: 'B1', key: 'b1', group: 'b' },
-  { header: 'B2 移乗', shortHeader: 'B2', key: 'b2', group: 'b' },
-  { header: 'B2 介助', shortHeader: 'B2助', key: 'b2_assist', group: 'b' },
-  { header: 'B3 口腔清潔', shortHeader: 'B3', key: 'b3', group: 'b' },
-  { header: 'B3 介助', shortHeader: 'B3助', key: 'b3_assist', group: 'b' },
-  { header: 'B4 食事摂取', shortHeader: 'B4', key: 'b4', group: 'b' },
-  { header: 'B4 介助', shortHeader: 'B4助', key: 'b4_assist', group: 'b' },
-  { header: 'B5 衣服の着脱', shortHeader: 'B5', key: 'b5', group: 'b' },
-  { header: 'B5 介助', shortHeader: 'B5助', key: 'b5_assist', group: 'b' },
-  { header: 'B6 診療・療養上の指示が通じる', shortHeader: 'B6', key: 'b6', group: 'b' },
-  { header: 'B7 危険行動', shortHeader: 'B7', key: 'b7', group: 'b' },
-  { header: 'B得点', key: 'bTotal', group: 'b', isTotal: true },
-  // C項目
-  { header: 'C15 開頭手術', shortHeader: 'C15', key: 'c15', group: 'c' },
-  { header: 'C16 開胸手術', shortHeader: 'C16', key: 'c16', group: 'c' },
-  { header: 'C17 開腹手術', shortHeader: 'C17', key: 'c17', group: 'c' },
-  { header: 'C18 骨の手術', shortHeader: 'C18', key: 'c18', group: 'c' },
-  { header: 'C19 胸腔鏡・腹腔鏡', shortHeader: 'C19', key: 'c19', group: 'c' },
-  { header: 'C20 全身麻酔・脊椎麻酔', shortHeader: 'C20', key: 'c20', group: 'c' },
-  { header: 'C21-1 経皮的血管内治療', shortHeader: 'C21-1', key: 'c21_1', group: 'c' },
-  { header: 'C21-2 経皮的心筋焼灼術等', shortHeader: 'C21-2', key: 'c21_2', group: 'c' },
-  { header: 'C21-3 侵襲的な消化器治療', shortHeader: 'C21-3', key: 'c21_3', group: 'c' },
-  { header: 'C22 別に定める検査', shortHeader: 'C22', key: 'c22', group: 'c' },
-  { header: 'C23 別に定める手術', shortHeader: 'C23', key: 'c23', group: 'c' },
-  { header: 'C得点', key: 'cTotal', group: 'c', isTotal: true },
-  // 判定結果
-  { header: 'P1 該当', key: 'meetsP1', group: 'p' },
-  { header: 'P2 該当', key: 'meetsP2', group: 'p' },
-  { header: 'P3 該当', key: 'meetsP3', group: 'p' },
+  { header: '判定対象フラグ', key: 'tarFlag', group: 'info' },
+  // 得点・基準（サマリー）
+  { header: 'A得点', key: 'aTotal', group: 'score', isTotal: true },
+  { header: 'B得点', key: 'bTotal', group: 'score', isTotal: true },
+  { header: 'C得点', key: 'cTotal', group: 'score', isTotal: true },
+  { header: '基準① A≧3 or C≧1', key: 'meetsP1', group: 'score' },
+  { header: '基準② A≧2かつB≧3 or A≧3 or C≧1', key: 'meetsP2', group: 'score' },
+  { header: '基準③ A≧1 or C≧1', key: 'meetsP3', group: 'score' },
+  // A項目（個別）
+  { header: '創傷処置', key: 'a1', group: 'a' },
+  { header: '呼吸ケア', key: 'a2', group: 'a' },
+  { header: '注射薬剤3種類以上', key: 'a3', group: 'a' },
+  { header: 'シリンジポンプ', key: 'a4', group: 'a' },
+  { header: '輸血・血液製剤', key: 'a5', group: 'a' },
+  { header: '専門的な治療・処置', key: 'a6', group: 'a' },
+  { header: '緊急に入院を必要とする状態', key: 'a7', group: 'a' },
+  // B項目（個別）
+  { header: '寝返り', key: 'b1', group: 'b' },
+  { header: '移乗', key: 'b2', group: 'b' },
+  { header: '移乗の介助', key: 'b2_assist', group: 'b' },
+  { header: '口腔清潔', key: 'b3', group: 'b' },
+  { header: '口腔清潔の介助', key: 'b3_assist', group: 'b' },
+  { header: '食事摂取', key: 'b4', group: 'b' },
+  { header: '食事摂取の介助', key: 'b4_assist', group: 'b' },
+  { header: '衣服の着脱', key: 'b5', group: 'b' },
+  { header: '衣服の着脱の介助', key: 'b5_assist', group: 'b' },
+  { header: '診療・療養上の指示が通じる', key: 'b6', group: 'b' },
+  { header: '危険行動', key: 'b7', group: 'b' },
+  // C項目（個別）
+  { header: '開頭手術', key: 'c15', group: 'c' },
+  { header: '開胸手術', key: 'c16', group: 'c' },
+  { header: '開腹手術', key: 'c17', group: 'c' },
+  { header: '骨の手術', key: 'c18', group: 'c' },
+  { header: '胸腔鏡・腹腔鏡', key: 'c19', group: 'c' },
+  { header: '全身麻酔・脊椎麻酔', key: 'c20', group: 'c' },
+  { header: '経皮的血管内治療', key: 'c21_1', group: 'c' },
+  { header: '経皮的心筋焼灼術等', key: 'c21_2', group: 'c' },
+  { header: '侵襲的な消化器治療', key: 'c21_3', group: 'c' },
+  { header: '別に定める検査', key: 'c22', group: 'c' },
+  { header: '別に定める手術', key: 'c23', group: 'c' },
 ];
 
 /** グループヘッダの色と名称 */
 const GROUP_STYLES: Record<string, { label: string; bg: string; text: string }> = {
   info: { label: '患者基本情報', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  a: { label: 'A項目', bg: 'bg-rose-50', text: 'text-rose-700' },
-  b: { label: 'B項目', bg: 'bg-sky-50', text: 'text-sky-700' },
-  c: { label: 'C項目', bg: 'bg-amber-50', text: 'text-amber-700' },
-  p: { label: '基準患者', bg: 'bg-violet-50', text: 'text-violet-700' },
+  score: { label: '得点・基準', bg: 'bg-violet-50', text: 'text-violet-700' },
+  a: { label: 'A項目（詳細）', bg: 'bg-rose-50', text: 'text-rose-700' },
+  b: { label: 'B項目（詳細）', bg: 'bg-sky-50', text: 'text-sky-700' },
+  c: { label: 'C項目（詳細）', bg: 'bg-amber-50', text: 'text-amber-700' },
 };
 
 /** 日付をYYYY/MM/DD形式に変換 */
@@ -175,7 +175,7 @@ export function NursingDetailTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full gap-4">
       {/* ヘッダエリア: フィルタ + アクション */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         {/* フィルタ */}
@@ -237,9 +237,9 @@ export function NursingDetailTab() {
       </div>
 
       {/* テーブル */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="overflow-auto rounded-xl border border-border bg-surface flex-1 min-h-0">
         <table className="min-w-full divide-y divide-border text-xs">
-          <thead className="bg-background">
+          <thead className="bg-background sticky top-0 z-10">
             {/* グループヘッダ行 */}
             <tr>
               <th className="px-2 py-1.5 text-center font-medium text-text-muted border-r border-border" rowSpan={2}>#</th>
@@ -261,12 +261,12 @@ export function NursingDetailTab() {
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-2 py-1.5 text-center font-medium text-text-muted border-r border-border whitespace-nowrap ${
+                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border min-w-[3rem] max-w-[5.5rem] text-[10px] leading-tight ${
                     col.isTotal ? 'bg-accent/5 text-accent font-bold' : ''
                   }`}
                   title={col.header}
                 >
-                  {col.shortHeader || col.header}
+                  {col.header}
                 </th>
               ))}
             </tr>

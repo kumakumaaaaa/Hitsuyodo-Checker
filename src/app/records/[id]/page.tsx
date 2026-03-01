@@ -316,7 +316,9 @@ export default function RecordDetailPage() {
               </nav>
 
               {/* コンテンツエリア */}
-              <div id="record-detail-content" className="flex-1 min-w-0 overflow-y-auto px-6 py-6 animate-slide-up">
+              <div id="record-detail-content" className={`flex-1 min-w-0 px-6 py-6 animate-slide-up ${
+                activeTab === 'detail' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+              }`}>
                 {activeTab === 'overview' && <OverviewTab record={record} />}
                 {activeTab === 'criteria' && <PlaceholderTab title="該当患者割合" icon={<BarChart3 size={40} />} />}
                 {activeTab === 'detail' && <NursingDetailTab />}
