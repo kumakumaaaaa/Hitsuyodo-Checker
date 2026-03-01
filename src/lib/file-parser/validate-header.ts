@@ -51,7 +51,7 @@ export async function validateFileHeader(file: File, type: 'H' | 'EF'): Promise<
       // EFファイル固有のヘッダ列名チェック（例: 2列目「データ識別番号」、3列目「退院年月日」）
       const col1 = columns[1]?.trim().replace(/^"|"$/g, '');
       const col2 = columns[2]?.trim().replace(/^"|"$/g, '');
-      if (col1 !== 'データ識別番号' || col2 !== '退院年月日') {
+      if (col1 !== 'データ識別番号' || !col2?.startsWith('退院年月日')) {
          return { valid: false, error: 'EFファイルではありません（ヘッダの構成が異なります）' };
       }
     }
