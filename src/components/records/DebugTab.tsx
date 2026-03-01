@@ -4,22 +4,27 @@ import { useState } from 'react';
 import { useRecordSessionStore } from '@/lib/store/record-session-store';
 import { FileText, Database, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
-type DebugTabId = 'h-file' | 'ef-file';
+type DebugTabId = 'h-file' | 'ef-file' | 'score-map';
 
 export function DebugTab() {
   const [activeSubTab, setActiveSubTab] = useState<DebugTabId>('h-file');
   const hRecords = useRecordSessionStore((s) => s.hRecords);
   const efRecords = useRecordSessionStore((s) => s.efRecords);
+  const scoreMap = useRecordSessionStore((s) => s.scoreMap);
+  const scoreList = scoreMap ? Array.from(scoreMap.values()) : null;
 
   const [hPage, setHPage] = useState(1);
   const [efPage, setEfPage] = useState(1);
+  const [scorePage, setScorePage] = useState(1);
   const PAGE_SIZE = 100;
 
   const totalHPages = Math.ceil((hRecords?.length || 0) / PAGE_SIZE);
   const totalEfPages = Math.ceil((efRecords?.length || 0) / PAGE_SIZE);
+  const totalScorePages = Math.ceil((scoreList?.length || 0) / PAGE_SIZE);
 
   const displayHRecords = hRecords?.slice((hPage - 1) * PAGE_SIZE, hPage * PAGE_SIZE) || [];
   const displayEfRecords = efRecords?.slice((efPage - 1) * PAGE_SIZE, efPage * PAGE_SIZE) || [];
+  const displayScoreRecords = scoreList?.slice((scorePage - 1) * PAGE_SIZE, scorePage * PAGE_SIZE) || [];
 
   return (
     <div className="space-y-6">
@@ -46,7 +51,7 @@ export function DebugTab() {
 
       {/* サブタブ切り替え */}
       <div className="flex border-b border-border">
-        {(['h-file', 'ef-file'] as const).map((tab) => (
+        {(['h-file', 'ef-file', 'score-map'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveSubTab(tab)}
@@ -57,8 +62,8 @@ export function DebugTab() {
             }`}
           >
             <div className="flex items-center gap-2">
-              {tab === 'h-file' ? <FileText size={16} /> : <Database size={16} />}
-              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : 'EFファイル (EfActEntry[])'}
+              {tab === 'h-file' ? <FileText size={16} /> : tab === 'ef-file' ? <Database size={16} /> : <FileText size={16} />}
+              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : tab === 'ef-file' ? 'EFファイル (EfActEntry[])' : 'B項目計算結果 (GenIIDailyScoreMap)'}
             </div>
           </button>
         ))}
@@ -130,7 +135,7 @@ export function DebugTab() {
             </table>
           </div>
         </div>
-      ) : (
+      ) : activeSubTab === 'ef-file' ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-text-muted">先頭100件ずつ表示しています</p>
@@ -191,7 +196,78 @@ export function DebugTab() {
             </table>
           </div>
         </div>
-      )}
+      ) : activeSubTab === 'score-map' ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-text-muted">先頭100件ずつ表示しています</p>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-text-secondary">
+                ページ {scorePage} / {totalScorePages}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setScorePage(scorePage - 1)}
+                  disabled={scorePage === 1}
+                  className="p-1.5 rounded-md border border-border hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() => setScorePage(scorePage + 1)}
+                  disabled={scorePage >= totalScorePages}
+                  className="p-1.5 rounded-md border border-border hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+            <table className="min-w-full divide-y divide-border text-xs">
+              <thead className="bg-background">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">patientNo</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">evalDate</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b1</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b2(x助)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b3(x助)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b4(x助)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b5(x助)</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b6</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">b7</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">bTotal</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">tarFlag</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">isTarget</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {displayScoreRecords.map((r, i) => (
+                  <tr key={i} className="hover:bg-surface-hover/50">
+                    <td className="px-3 py-1.5 font-mono">{r.patientNo}</td>
+                    <td className="px-3 py-1.5 whitespace-nowrap">{r.evalDate}</td>
+                    <td className="px-3 py-1.5">{r.b1}</td>
+                    <td className="px-3 py-1.5">{r.b2} <span className="text-text-muted text-[10px]">(x{r.b2_assist})</span></td>
+                    <td className="px-3 py-1.5">{r.b3} <span className="text-text-muted text-[10px]">(x{r.b3_assist})</span></td>
+                    <td className="px-3 py-1.5">{r.b4} <span className="text-text-muted text-[10px]">(x{r.b4_assist})</span></td>
+                    <td className="px-3 py-1.5">{r.b5} <span className="text-text-muted text-[10px]">(x{r.b5_assist})</span></td>
+                    <td className="px-3 py-1.5">{r.b6}</td>
+                    <td className="px-3 py-1.5">{r.b7}</td>
+                    <td className="px-3 py-1.5 font-bold text-accent">{r.bTotal}</td>
+                    <td className="px-3 py-1.5 font-mono">{r.tarFlag}</td>
+                    <td className="px-3 py-1.5">
+                      {r.isTargetForEval ? (
+                        <span className="text-success font-bold">Yes</span>
+                      ) : (
+                        <span className="text-text-muted">No</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

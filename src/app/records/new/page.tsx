@@ -15,6 +15,8 @@ import { recordRepository } from '@/lib/db/repositories/record-repository';
 import { useRecordSessionStore } from '@/lib/store/record-session-store';
 import { parseHFile } from '@/lib/file-parser/parse-h-file';
 import { parseEfFile } from '@/lib/file-parser/parse-ef-file';
+import { buildEmptyScoreMap } from '@/lib/calculation/build-empty-map';
+import { applyHFileScores } from '@/lib/calculation/apply-h-file-scores';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -95,6 +97,13 @@ export default function NewRecordPage() {
       const hRecords = hFile ? await parseHFile(hFile.file) : null;
       const efRecords = efFile ? await parseEfFile(efFile.file) : null;
 
+      // ---- 評価マップ生成・B項目の計算 (オンメモリ) ----
+      let scoreMap = null;
+      if (hRecords) {
+        scoreMap = buildEmptyScoreMap(hRecords);
+        applyHFileScores(hRecords, scoreMap);
+      }
+
       // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を
       // メモリ上のGlobal Store(Zustand)に退避して詳細画面に引き渡す
       setSession({
@@ -106,6 +115,7 @@ export default function NewRecordPage() {
         efDateRange,
         hRecords,
         efRecords,
+        scoreMap,
       });
 
       setTimeout(() => {

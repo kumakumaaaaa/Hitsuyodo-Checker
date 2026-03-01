@@ -3,6 +3,7 @@ import type { UploadedFile, EvaluationMethod } from '@/components/records/SetupS
 import type { DateRange } from '@/lib/file-parser/validate-data-period';
 import type { HRecordEntry } from '@/lib/file-parser/parse-h-file';
 import type { EfActEntry } from '@/lib/file-parser/parse-ef-file';
+import type { GenIIDailyScore } from '@/types/daily-score';
 
 interface RecordSessionState {
   recordId: number | null;
@@ -13,6 +14,7 @@ interface RecordSessionState {
   efDateRange: DateRange | null;
   hRecords: HRecordEntry[] | null;
   efRecords: EfActEntry[] | null;
+  scoreMap: Map<string, GenIIDailyScore> | null;
   
   // セッションを更新する（レコード生成完了後に呼ぶ）
   setSession: (data: {
@@ -24,6 +26,7 @@ interface RecordSessionState {
     efDateRange: DateRange | null;
     hRecords: HRecordEntry[] | null;
     efRecords: EfActEntry[] | null;
+    scoreMap: Map<string, GenIIDailyScore> | null;
   }) => void;
   
   // セッションをクリアする
@@ -44,6 +47,7 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
   efDateRange: null,
   hRecords: null,
   efRecords: null,
+  scoreMap: null,
 
   setSession: (data) => set({ ...data }),
   clearSession: () => set({
@@ -55,5 +59,6 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
     efDateRange: null,
     hRecords: null,
     efRecords: null,
+    scoreMap: null,
   }),
 }));
