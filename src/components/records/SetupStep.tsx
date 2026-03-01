@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Upload, FileText, X, AlertCircle, Calendar, Loader2 } from 'lucide-react';
 import { extractDateRangeFromFile, validateDateRangeAgainstPeriod } from '@/lib/file-parser/validate-data-period';
+import { validateEvaluationMethod } from '@/lib/file-parser/validate-evaluation-method';
 
 /* ===== 型定義 ===== */
 export type EvaluationMethod = 'necessity_1' | 'necessity_2';
@@ -245,6 +246,13 @@ export function SetupStep({
     setDataPeriodError(null);
 
     try {
+      // 評価方式とHファイル内容の整合性検証
+      const evalMethodRes = await validateEvaluationMethod(hFile.file, evaluationMethod);
+      if (!evalMethodRes.isValid) {
+        setDataPeriodError(evalMethodRes.error || '不明なエラー');
+        return;
+      }
+
       // Hファイルのデータ期間検証
       const hDateRange = await extractDateRangeFromFile(hFile.file, 'H');
       const hValRes = validateDateRangeAgainstPeriod(hDateRange, periodFrom, periodTo, 'Hファイル');
