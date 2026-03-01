@@ -69,10 +69,10 @@ export type GenIIDailyScore = {
   c21_3: number;  // 侵襲的な消化器治療 (0/1)
   c22: number;    // 別に定める検査 (0/1)
   c23: number;    // 別に定める手術 (0/1)
-  cTotal: number; // いずれかが1なら1、全て0なら0
+  cTotal: number; // C15〜C23の合計
 
   // ========== 判定結果（後段で算出） ==========
-  meetsP1: boolean;   // A>=3 OR C>=1
-  meetsP2: boolean;   // (A>=2 AND B>=3) OR A>=3 OR C>=1
-  meetsP3: boolean;   // A>=1 OR C>=1
+  meetsP1: boolean;   // A>=3 OR cTotal>=1
+  meetsP2: boolean;   // (A>=2 AND B>=3) OR A>=3 OR cTotal>=1
+  meetsP3: boolean;   // A>=1 OR cTotal>=1
 };

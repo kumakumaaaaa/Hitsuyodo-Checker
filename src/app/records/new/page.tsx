@@ -17,6 +17,7 @@ import { parseHFile } from '@/lib/file-parser/parse-h-file';
 import { parseEfFile } from '@/lib/file-parser/parse-ef-file';
 import { buildEmptyScoreMap } from '@/lib/calculation/build-empty-map';
 import { applyHFileScores } from '@/lib/calculation/apply-h-file-scores';
+import { applyEfFileCScores } from '@/lib/calculation/apply-ef-file-c-scores';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -102,6 +103,11 @@ export default function NewRecordPage() {
       if (hRecords) {
         scoreMap = buildEmptyScoreMap(hRecords);
         applyHFileScores(hRecords, scoreMap);
+
+        // EFファイルが存在すれば、C項目のスコアも反映
+        if (efRecords) {
+          applyEfFileCScores(efRecords, scoreMap);
+        }
       }
 
       // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を

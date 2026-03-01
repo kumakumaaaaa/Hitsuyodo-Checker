@@ -236,6 +236,18 @@ export function DebugTab() {
                   <th className="px-3 py-2 text-left font-medium text-text-muted">b6</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">b7</th>
                   <th className="px-3 py-2 text-left font-medium text-accent">bTotal</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c15</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c16</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c17</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c18</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c19</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c20</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c21-1</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c21-2</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c21-3</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c22</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">c23</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">cTotal</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">tarFlag</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">isTarget</th>
                 </tr>
@@ -253,6 +265,18 @@ export function DebugTab() {
                     <td className="px-3 py-1.5">{r.b6}</td>
                     <td className="px-3 py-1.5">{r.b7}</td>
                     <td className="px-3 py-1.5 font-bold text-accent">{r.bTotal}</td>
+                    <td className="px-3 py-1.5">{r.c15}</td>
+                    <td className="px-3 py-1.5">{r.c16}</td>
+                    <td className="px-3 py-1.5">{r.c17}</td>
+                    <td className="px-3 py-1.5">{r.c18}</td>
+                    <td className="px-3 py-1.5">{r.c19}</td>
+                    <td className="px-3 py-1.5">{r.c20}</td>
+                    <td className="px-3 py-1.5">{r.c21_1}</td>
+                    <td className="px-3 py-1.5">{r.c21_2}</td>
+                    <td className="px-3 py-1.5">{r.c21_3}</td>
+                    <td className="px-3 py-1.5">{r.c22}</td>
+                    <td className="px-3 py-1.5">{r.c23}</td>
+                    <td className="px-3 py-1.5 font-bold text-accent">{r.cTotal}</td>
                     <td className="px-3 py-1.5 font-mono">{r.tarFlag}</td>
                     <td className="px-3 py-1.5">
                       {r.isTargetForEval ? (

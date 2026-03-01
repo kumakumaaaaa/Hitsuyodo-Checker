@@ -68,20 +68,21 @@ Step 3: B項目を埋める（Hファイルから）
   → キーで器を引き、bScore / bItems を書き込む
 
 
-Step 4: A項目を埋める（EFファイルから）
+Step 4: C項目を埋める（EFファイルから）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  EfActEntry[] を走査し、レセプト電算コード対応表と突合
+  → 該当するC項目の実施日（評価日）の器のスコアを 1 にする
+  → 実施日を起点として、各項目に定められた有効期間分、同一項目のスコアを 1 に展開する
+  → 各日の cTotal（C15〜C23の合計）を算出する
+
+
+Step 5: A項目を埋める（EFファイルから）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   EfActEntry[] を "患者番号_日付" でグループ化
   → 各グループに対して A1〜A7 を判定
   → キーで器を引き、aScore / aItems を書き込む
 
   ⚠️ EFにキーが存在するがHに存在しない場合は警告ログを出力する
-
-
-Step 5: C項目を埋める（EFファイルから）
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Step 4 で作成した EF グループを使い回す
-  → C項目のレセプト電算コード対応表と突合
-  → キーで器を引き、cScore / cItems を書き込む
 
 
 Step 6: 基準充足判定を行う
@@ -420,12 +421,12 @@ export type GenIIDailyScore = {
   c21_3: number;  // 侵襲的な消化器治療 (0/1) 有効期間: 4日間
   c22: number;    // 別に定める検査 (0/1) 有効期間: 2日間
   c23: number;    // 別に定める手術 (0/1) 有効期間: 5日間
-  cTotal: number; // いずれかが1なら1、全て0なら0
+  cTotal: number; // C15〜C23の合計値（複数項目が重複した場合、1以上になり得る）
 
   // ========== 判定結果（後段で算出） ==========
-  meetsP1: boolean;   // A≥3 OR C≥1
-  meetsP2: boolean;   // (A≥2 AND B≥3) OR A≥3 OR C≥1
-  meetsP3: boolean;   // A≥1 OR C≥1
+  meetsP1: boolean;   // A≥3 OR cTotal≥1
+  meetsP2: boolean;   // (A≥2 AND B≥3) OR A≥3 OR cTotal≥1
+  meetsP3: boolean;   // A≥1 OR cTotal≥1
 };
 ```
 
@@ -581,9 +582,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
 | # | 事項 | ステータス |
 |---|------|-----------|
-| 1 | A3・A7・C項目の有効期間の起算日ルール（当日含むか等） | 🔲 要確認 |
-| 2 | Step 4: applyAScores のロジック設計 | 🔲 次回 |
-| 3 | Step 5: applyCScores のロジック設計 | 🔲 次回 |
+| 1 | A3・A7・C項目の有効期間の起算日ルール（当日含むか等） | ✅ 確定：当日起算 |
+| 2 | Step 4: applyCScores のロジック設計 | ✅ 完了 |
+| 3 | Step 5: applyAScores のロジック設計 | 🔲 次回 |
 
 ---
 
