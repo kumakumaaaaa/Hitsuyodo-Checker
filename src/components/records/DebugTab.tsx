@@ -63,7 +63,7 @@ export function DebugTab() {
           >
             <div className="flex items-center gap-2">
               {tab === 'h-file' ? <FileText size={16} /> : tab === 'ef-file' ? <Database size={16} /> : <FileText size={16} />}
-              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : tab === 'ef-file' ? 'EFファイル (EfActEntry[])' : 'B項目計算結果 (GenIIDailyScoreMap)'}
+              {tab === 'h-file' ? 'Hファイル (HRecordEntry[])' : tab === 'ef-file' ? 'EFファイル (EfActEntry[])' : 'スコア計算結果 (GenIIDailyScoreMap)'}
             </div>
           </button>
         ))}
@@ -228,6 +228,14 @@ export function DebugTab() {
                 <tr>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">patientNo</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">evalDate</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a1</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a2</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a3</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a4</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a5</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a6</th>
+                  <th className="px-3 py-2 text-left font-medium text-text-muted">a7</th>
+                  <th className="px-3 py-2 text-left font-medium text-accent">aTotal</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">b1</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">b2(x助)</th>
                   <th className="px-3 py-2 text-left font-medium text-text-muted">b3(x助)</th>
@@ -257,6 +265,14 @@ export function DebugTab() {
                   <tr key={i} className="hover:bg-surface-hover/50">
                     <td className="px-3 py-1.5 font-mono">{r.patientNo}</td>
                     <td className="px-3 py-1.5 whitespace-nowrap">{r.evalDate}</td>
+                    <td className="px-3 py-1.5">{r.a1}</td>
+                    <td className="px-3 py-1.5">{r.a2}</td>
+                    <td className="px-3 py-1.5">{r.a3}</td>
+                    <td className="px-3 py-1.5">{r.a4}</td>
+                    <td className="px-3 py-1.5">{r.a5}</td>
+                    <td className="px-3 py-1.5">{r.a6}</td>
+                    <td className="px-3 py-1.5">{r.a7}</td>
+                    <td className="px-3 py-1.5 font-bold text-accent">{r.aTotal}</td>
                     <td className="px-3 py-1.5">{r.b1}</td>
                     <td className="px-3 py-1.5">{r.b2} <span className="text-text-muted text-[10px]">(x{r.b2_assist})</span></td>
                     <td className="px-3 py-1.5">{r.b3} <span className="text-text-muted text-[10px]">(x{r.b3_assist})</span></td>
