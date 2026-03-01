@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, X, AlertCircle, Calendar, Loader2 } from 'lucide-react';
 import { extractDateRangeFromFile, validateDateRangeAgainstPeriod } from '@/lib/file-parser/validate-data-period';
 import { validateEvaluationMethod } from '@/lib/file-parser/validate-evaluation-method';
+import { validateFileHeader } from '@/lib/file-parser/validate-header';
 
 /* ===== 型定義 ===== */
 export type EvaluationMethod = 'necessity_1' | 'necessity_2';
@@ -65,11 +66,13 @@ function validateFile(file: File): FileValidationResult {
 
 /* ===== ファイルドロップゾーン ===== */
 function FileDropZone({
+  type,
   label,
   file,
   onFileSelect,
   onRemove,
 }: {
+  type: 'H' | 'EF';
   label: string;
   file: UploadedFile | null;
   onFileSelect: (file: UploadedFile) => void;
@@ -82,10 +85,17 @@ function FileDropZone({
     async (f: File) => {
       setError(null);
 
-      // バリデーション
+      // 基本バリデーション（拡張子・サイズ）
       const validation = validateFile(f);
       if (!validation.valid) {
         setError(validation.error ?? 'ファイルの検証に失敗しました');
+        return;
+      }
+
+      // ヘッダー内容の検証
+      const headerValidation = await validateFileHeader(f, type);
+      if (!headerValidation.valid) {
+        setError(headerValidation.error ?? 'ファイル形式が一致しません');
         return;
       }
 
@@ -383,11 +393,11 @@ export function SetupStep({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">Hファイル</p>
-            <FileDropZone label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
+            <FileDropZone type="H" label="Hファイル" file={hFile} onFileSelect={onHFileChange} onRemove={() => onHFileChange(null)} />
           </div>
           <div>
             <p className="mb-1.5 text-xs font-medium text-text-muted">EFファイル</p>
-            <FileDropZone label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
+            <FileDropZone type="EF" label="EFファイル" file={efFile} onFileSelect={onEfFileChange} onRemove={() => onEfFileChange(null)} />
           </div>
         </div>
       </section>
