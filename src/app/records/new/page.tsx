@@ -12,6 +12,7 @@ import type { DateRange } from '@/lib/file-parser/validate-data-period';
 import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
+import { useRecordSessionStore } from '@/lib/store/record-session-store';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -21,6 +22,7 @@ const STEPS = [
 export default function NewRecordPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const setSession = useRecordSessionStore((state) => state.setSession);
 
   // Step 1 state
   const [evaluationMethod, setEvaluationMethod] = useState<EvaluationMethod>('necessity_2');
@@ -87,6 +89,17 @@ export default function NewRecordPage() {
         })),
       });
 
+      // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を
+      // メモリ上のGlobal Store(Zustand)に退避して詳細画面に引き渡す
+      setSession({
+        recordId,
+        evaluationMethod,
+        hFile,
+        efFile,
+        hDateRange,
+        efDateRange,
+      });
+
       setTimeout(() => {
         router.push(`/records/${recordId}`);
       }, 1500);
@@ -94,7 +107,7 @@ export default function NewRecordPage() {
       console.error('Record creation failed:', e);
       throw e;
     }
-  }, [title, periodFrom, periodTo, hFile, efFile, wards, evaluationMethod, router]);
+  }, [title, periodFrom, periodTo, hFile, efFile, hDateRange, efDateRange, wards, evaluationMethod, router, setSession]);
 
   return (
     <div className="min-h-screen bg-background">
