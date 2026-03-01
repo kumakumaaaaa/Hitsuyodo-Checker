@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { UploadedFile, EvaluationMethod } from '@/components/records/SetupStep';
 import type { DateRange } from '@/lib/file-parser/validate-data-period';
+import type { HRecordEntry } from '@/lib/file-parser/parse-h-file';
+import type { EfActEntry } from '@/lib/file-parser/parse-ef-file';
 
 interface RecordSessionState {
   recordId: number | null;
@@ -9,6 +11,8 @@ interface RecordSessionState {
   efFile: UploadedFile | null;
   hDateRange: DateRange | null;
   efDateRange: DateRange | null;
+  hRecords: HRecordEntry[] | null;
+  efRecords: EfActEntry[] | null;
   
   // セッションを更新する（レコード生成完了後に呼ぶ）
   setSession: (data: {
@@ -18,6 +22,8 @@ interface RecordSessionState {
     efFile: UploadedFile | null;
     hDateRange: DateRange | null;
     efDateRange: DateRange | null;
+    hRecords: HRecordEntry[] | null;
+    efRecords: EfActEntry[] | null;
   }) => void;
   
   // セッションをクリアする
@@ -36,6 +42,8 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
   efFile: null,
   hDateRange: null,
   efDateRange: null,
+  hRecords: null,
+  efRecords: null,
 
   setSession: (data) => set({ ...data }),
   clearSession: () => set({
@@ -45,5 +53,7 @@ export const useRecordSessionStore = create<RecordSessionState>((set) => ({
     efFile: null,
     hDateRange: null,
     efDateRange: null,
+    hRecords: null,
+    efRecords: null,
   }),
 }));

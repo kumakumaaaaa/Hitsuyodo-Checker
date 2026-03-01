@@ -13,6 +13,8 @@ import { extractWardCodes } from '@/lib/file-parser/extract-ward-codes';
 import { getWardDefault } from '@/lib/settings/ward-defaults';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 import { useRecordSessionStore } from '@/lib/store/record-session-store';
+import { parseHFile } from '@/lib/file-parser/parse-h-file';
+import { parseEfFile } from '@/lib/file-parser/parse-ef-file';
 
 const STEPS = [
   { label: '基本設定', description: '評価方式・タイトル・期間・ファイル' },
@@ -89,6 +91,10 @@ export default function NewRecordPage() {
         })),
       });
 
+      // ---- ファイルのパース実行 ----
+      const hRecords = hFile ? await parseHFile(hFile.file) : null;
+      const efRecords = efFile ? await parseEfFile(efFile.file) : null;
+
       // DBには入らない「ファイルの生データ(JS Object)や解析したデータ期間情報」を
       // メモリ上のGlobal Store(Zustand)に退避して詳細画面に引き渡す
       setSession({
@@ -98,6 +104,8 @@ export default function NewRecordPage() {
         efFile,
         hDateRange,
         efDateRange,
+        hRecords,
+        efRecords,
       });
 
       setTimeout(() => {

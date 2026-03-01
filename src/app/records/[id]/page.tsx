@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 import type { RecordDetail } from '@/types';
+import { DebugTab } from '@/components/records/DebugTab';
 import {
   ArrowLeft,
   Loader2,
@@ -26,7 +27,7 @@ import { useRecordSessionStore } from '@/lib/store/record-session-store';
 import type { DateRange } from '@/lib/file-parser/validate-data-period';
 
 /* ===== タブ定義 ===== */
-type TabId = 'overview' | 'criteria' | 'detail' | 'analysis' | 'compare';
+type TabId = 'overview' | 'criteria' | 'detail' | 'analysis' | 'compare' | 'debug';
 
 // Extend RecordDetail with dynamic session fields locally for rendering
 export type RecordDetailWithSession = RecordDetail & { sessionHDateRange?: DateRange | null, sessionEfDateRange?: DateRange | null };
@@ -37,6 +38,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; disabled?: boolea
   { id: 'detail', label: '看護必要度詳細', icon: <ClipboardList size={16} /> },
   { id: 'analysis', label: 'ABC項目別分析', icon: <TrendingUp size={16} /> },
   { id: 'compare', label: '看護必要度Ⅰ・Ⅱ比較分析', icon: <GitCompareArrows size={16} /> },
+  { id: 'debug', label: 'パース結果デバッグ', icon: <span className="text-base leading-none">🐛</span> },
 ];
 
 /* ===== Tab 1: レコード取り込み設定 ===== */
@@ -319,6 +321,7 @@ export default function RecordDetailPage() {
                 {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
                 {activeTab === 'analysis' && <PlaceholderTab title="ABC項目別分析" icon={<TrendingUp size={40} />} />}
                 {activeTab === 'compare' && <PlaceholderTab title="看護必要度Ⅰ・Ⅱ比較分析" icon={<GitCompareArrows size={40} />} />}
+                {activeTab === 'debug' && <DebugTab />}
               </div>
             </div>
           </>
