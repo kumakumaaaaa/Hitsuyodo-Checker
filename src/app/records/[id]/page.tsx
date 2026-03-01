@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { recordRepository } from '@/lib/db/repositories/record-repository';
 import type { RecordDetail } from '@/types';
 import { DebugTab } from '@/components/records/DebugTab';
+import { NursingDetailTab } from '@/components/records/NursingDetailTab';
 import {
   ArrowLeft,
   Loader2,
@@ -318,7 +319,7 @@ export default function RecordDetailPage() {
               <div id="record-detail-content" className="flex-1 min-w-0 overflow-y-auto px-6 py-6 animate-slide-up">
                 {activeTab === 'overview' && <OverviewTab record={record} />}
                 {activeTab === 'criteria' && <PlaceholderTab title="該当患者割合" icon={<BarChart3 size={40} />} />}
-                {activeTab === 'detail' && <PlaceholderTab title="看護必要度詳細" icon={<ClipboardList size={40} />} />}
+                {activeTab === 'detail' && <NursingDetailTab />}
                 {activeTab === 'analysis' && <PlaceholderTab title="ABC項目別分析" icon={<TrendingUp size={40} />} />}
                 {activeTab === 'compare' && <PlaceholderTab title="看護必要度Ⅰ・Ⅱ比較分析" icon={<GitCompareArrows size={40} />} />}
                 {activeTab === 'debug' && <DebugTab />}
