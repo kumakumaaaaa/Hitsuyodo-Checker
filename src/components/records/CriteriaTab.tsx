@@ -207,8 +207,10 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
             <span className="font-bold text-base text-text-primary">{result.wardName}</span>
             <span className="font-mono text-sm text-text-muted">({result.wardCode})</span>
           </div>
-          <div className="text-xs text-text-muted mt-0.5">
-            入院料: {result.admissionTypeName ?? '未設定'}
+          <div className="mt-1.5 inline-flex items-center">
+            <span className="text-xs font-bold text-accent bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-md">
+              {result.admissionTypeName ?? '入院料未設定'}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-1 text-xs text-text-muted bg-background rounded-md px-2 py-1">
@@ -258,8 +260,8 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                       <UserCheck size={12} className={isWarning ? 'text-danger' : 'text-accent'} />
                       該当: {c.qualifyingCount.toLocaleString()} 名
                       {requiredCount !== null && (
-                        <span className="text-[10px] text-text-muted ml-1 font-normal">
-                          (算定要件基準: {requiredCount.toLocaleString()} 名)
+                        <span className="text-[10px] font-bold text-accent bg-accent/5 px-1.5 py-0.5 rounded ml-1 border border-accent/20">
+                          要件: {requiredCount.toLocaleString()} 名
                         </span>
                       )}
                     </div>
@@ -285,9 +287,9 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                     />
                   </div>
                   {c.thresholdRate !== null && (
-                    <div className="flex justify-between items-center text-[10px]">
+                    <div className="flex justify-between items-center text-xs mt-1.5">
                       <span></span>
-                      <span className="text-text-muted">
+                      <span className="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20 shadow-sm">
                         算定要件: {c.thresholdRate}%
                       </span>
                     </div>
