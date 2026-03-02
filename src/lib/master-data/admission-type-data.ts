@@ -75,14 +75,14 @@ export const ADMISSION_TYPE_CRITERIA: AdmissionTypeCriteria[] = [
   // 急性期一般入院料4: P2
   { id: 5, admissionTypeId: 4, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 15 },
   // 急性期一般入院料5: P2
-  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 14 },
+  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 11 },
   // 急性期一般入院料6: 判定基準なし
   // 地域一般入院料1: 判定基準なし
   // 地域包括ケア病棟入院料1〜4: P3
-  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
-  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
-  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
-  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
+  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
+  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
+  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
+  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
 ];
 
 /* ===== ヘルパー関数 ===== */
