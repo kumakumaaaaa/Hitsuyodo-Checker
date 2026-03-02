@@ -34,14 +34,14 @@ export function buildEmptyScoreMap(hRecords: HRecordEntry[]): Map<string, GenIID
         admissionDate: columns[H_COL.ADMISSION_DATE]?.trim() || '',
         dischargeDate: columns[H_COL.DISCHARGE_DATE]?.trim() || '',
         
-        // 入院日からの経過日数を計算
+        // 入院日からの経過日数を計算（入院日を1日目とするため + 1）
         daysFromAdmission: (() => {
           const admStr = columns[H_COL.ADMISSION_DATE]?.trim() || '';
           if (evalDate.length !== 8 || admStr.length !== 8) return 0;
           const ed = new Date(`${evalDate.slice(0,4)}-${evalDate.slice(4,6)}-${evalDate.slice(6,8)}`);
           const ad = new Date(`${admStr.slice(0,4)}-${admStr.slice(4,6)}-${admStr.slice(6,8)}`);
           if (isNaN(ed.getTime()) || isNaN(ad.getTime())) return 0;
-          return Math.max(0, Math.floor((ed.getTime() - ad.getTime()) / (1000 * 60 * 60 * 24)));
+          return Math.max(0, Math.floor((ed.getTime() - ad.getTime()) / (1000 * 60 * 60 * 24))) + 1;
         })(),
         
         // TARフラグ
