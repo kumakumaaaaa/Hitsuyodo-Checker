@@ -221,16 +221,10 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
         <div className={`grid gap-3 ${result.criteria.length > 1 ? 'sm:grid-cols-2' : ''}`}>
           {result.criteria.map((c) => {
             const isWarning = c.thresholdRate !== null && c.rate < c.thresholdRate;
-            let diffText = '';
+            let requiredCount = null;
             
             if (c.thresholdRate !== null) {
-              const requiredCount = Math.ceil((c.totalCount * c.thresholdRate) / 100);
-              const diffCount = c.qualifyingCount - requiredCount;
-              if (diffCount < 0) {
-                diffText = `あと ${Math.abs(diffCount).toLocaleString()} 名`;
-              } else {
-                diffText = `要件達成 (余裕 ${diffCount.toLocaleString()} 名)`;
-              }
+              requiredCount = Math.ceil((c.totalCount * c.thresholdRate) / 100);
             }
             
             return (
@@ -262,6 +256,11 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                     <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                       <UserCheck size={12} className={isWarning ? 'text-danger' : 'text-accent'} />
                       該当: {c.qualifyingCount.toLocaleString()} 名
+                      {requiredCount !== null && (
+                        <span className="text-[10px] text-text-muted ml-1 font-normal">
+                          (算定要件基準: {requiredCount.toLocaleString()} 名)
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-text-secondary">
                       <Users size={12} />
@@ -286,9 +285,7 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                   </div>
                   {c.thresholdRate !== null && (
                     <div className="flex justify-between items-center text-[10px]">
-                      <span className={isWarning ? 'text-danger font-bold' : 'text-text-secondary'}>
-                        {diffText}
-                      </span>
+                      <span></span>
                       <span className="text-text-muted">
                         算定要件: {c.thresholdRate}%
                       </span>
