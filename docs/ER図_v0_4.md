@@ -17,6 +17,7 @@
 | 0.5 | 2026年2月 | `ward_default_setting` テーブルを追加（localStorage永続化の論理モデル）。`ward_setting.ward_name` を必須に変更 |
 | 0.6 | 2026年3月 | データ系テーブルの注記を更新。中間データ（`GenIIDailyScore[]` 等）はオンメモリ処理のためER図の対象外であることを明記。未決事項を整理 |
 | 0.7 | 2026年3月 | `record` テーブルにアップロードファイルのデータ期間（`h_period_from`, `h_period_to`, `ef_period_from`, `ef_period_to`）および `status` の `draft` を追加 |
+| 0.8 | 2026年3月 | `admission_type_criteria` テーブルの `threshold_rate` を必要度Ⅰ・Ⅱに分け `threshold_rate_1`, `threshold_rate_2` に変更 |
 
 ---
 
@@ -50,7 +51,8 @@ erDiagram
         int admission_type_id FK
         int judgment_pattern_id FK
         string criteria_no "基準番号（基準①等）"
-        decimal threshold_rate "閾値 %（NULLable）"
+        decimal threshold_rate_1 "必要度Ⅰ 閾値 %（NULLable）"
+        decimal threshold_rate_2 "必要度Ⅱ 閾値 %（NULLable）"
     }
 
     %% リレーション: 判定パターン ↔ 入院料
