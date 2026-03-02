@@ -68,18 +68,21 @@ export interface AdmissionTypeCriteria {
 
 export const ADMISSION_TYPE_CRITERIA: AdmissionTypeCriteria[] = [
 
-  // 急性期一般入院料2〜5: P2
-  { id: 3, admissionTypeId: 2, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
-  { id: 4, admissionTypeId: 3, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
-  { id: 5, admissionTypeId: 4, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
-  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: null },
+  // 急性期一般入院料2: P2
+  { id: 3, admissionTypeId: 2, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 21 },
+  // 急性期一般入院料3: P2
+  { id: 4, admissionTypeId: 3, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 18 },
+  // 急性期一般入院料4: P2
+  { id: 5, admissionTypeId: 4, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 15 },
+  // 急性期一般入院料5: P2
+  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 14 },
   // 急性期一般入院料6: 判定基準なし
   // 地域一般入院料1: 判定基準なし
   // 地域包括ケア病棟入院料1〜4: P3
-  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: null },
-  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: null },
-  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: null },
-  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: null },
+  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
+  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
+  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
+  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 12 },
 ];
 
 /* ===== ヘルパー関数 ===== */

@@ -24,6 +24,7 @@ interface WardCriteriaResult {
     totalCount: number;
     qualifyingCount: number;
     rate: number; // 0〜100
+    thresholdRate: number | null;
   }[];
   totalCount: number; // 全基準共通の母数
 }
@@ -75,6 +76,7 @@ function computeWardResults(
         totalCount,
         qualifyingCount,
         rate: totalCount > 0 ? (qualifyingCount / totalCount) * 100 : 0,
+        thresholdRate: c.thresholdRate,
       };
     });
 
@@ -217,43 +219,70 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
       {/* 基準ごとの行 */}
       {hasCriteria ? (
         <div className="grid gap-3 sm:grid-cols-2">
-          {result.criteria.map((c) => (
-            <div
-              key={c.criteriaNo}
-              className="rounded-lg border border-border bg-background p-3"
-            >
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs font-bold text-accent bg-accent/10 rounded px-1.5 py-0.5">
-                  {c.criteriaNo}
-                </span>
-                <span className="text-xs text-text-muted truncate">
-                  {c.patternCode}: {c.patternLabel}
-                </span>
-              </div>
-              <div className="flex items-end justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <UserCheck size={12} className="text-accent" />
-                    該当: {c.qualifyingCount.toLocaleString()} 名
+          {result.criteria.map((c) => {
+            const isWarning = c.thresholdRate !== null && c.rate < c.thresholdRate;
+            
+            return (
+              <div
+                key={c.criteriaNo}
+                className={`rounded-lg border p-3 ${
+                  isWarning ? 'border-danger/30 bg-danger/5' : 'border-border bg-background'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs font-bold rounded px-1.5 py-0.5 ${
+                      isWarning ? 'text-danger bg-danger/10' : 'text-accent bg-accent/10'
+                    }`}>
+                      {c.criteriaNo}
+                    </span>
+                    <span className="text-xs text-text-muted truncate">
+                      {c.patternCode}: {c.patternLabel}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <Users size={12} />
-                    母数: {c.totalCount.toLocaleString()} 名
+                  {isWarning && (
+                    <span className="text-[10px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">
+                      基準未達
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-end justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <UserCheck size={12} className={isWarning ? 'text-danger' : 'text-accent'} />
+                      該当: {c.qualifyingCount.toLocaleString()} 名
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <Users size={12} />
+                      母数: {c.totalCount.toLocaleString()} 名
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-2xl font-bold ${isWarning ? 'text-danger' : 'text-accent'}`}>
+                      {c.rate.toFixed(2)}%
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-accent">{c.rate.toFixed(2)}%</div>
+                {/* プログレスバー */}
+                <div className="mt-2 space-y-1">
+                  <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isWarning ? 'bg-danger' : 'bg-accent'
+                      }`}
+                      style={{ width: `${Math.min(c.rate, 100)}%` }}
+                    />
+                  </div>
+                  {c.thresholdRate !== null && (
+                    <div className="flex justify-between text-[10px] text-text-muted">
+                      <span></span>
+                      <span>算定要件: {c.thresholdRate}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {/* プログレスバー */}
-              <div className="mt-2 h-1.5 w-full rounded-full bg-border overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-accent transition-all duration-500"
-                  style={{ width: `${Math.min(c.rate, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-background p-4 text-center text-sm text-text-muted">
