@@ -368,6 +368,7 @@ export type GenIIDailyScore = {
   wardCode: string;          // 病棟コード
   admissionDate: string;     // 入院年月日
   dischargeDate: string;     // 退院年月日 ("00000000" = 在院中)
+  daysFromAdmission: number; // 入院日からの経過日数 (evalDate - admissionDate)
 
   // ========== TAR（判定対象フラグ） ==========
   tarFlag: number;           // TAR0010の値 (0〜5)

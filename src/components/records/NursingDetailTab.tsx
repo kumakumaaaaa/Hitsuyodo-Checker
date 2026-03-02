@@ -16,6 +16,7 @@ const COLUMNS: { header: string; key: keyof GenIIDailyScore; group: string; isTo
   { header: 'データ識別番号', key: 'patientNo', group: 'info' },
   { header: '退院年月日', key: 'dischargeDate', group: 'info' },
   { header: '入院年月日', key: 'admissionDate', group: 'info' },
+  { header: '入院経過日数', key: 'daysFromAdmission', group: 'info' },
   { header: '実施年月日', key: 'evalDate', group: 'info' },
   { header: '判定対象フラグ', key: 'tarFlag', group: 'info' },
   // 得点・基準（サマリー）
