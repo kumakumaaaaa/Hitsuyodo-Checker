@@ -89,6 +89,10 @@ export default function NewRecordPage() {
         evaluationMethod,
         hFileName: hFile?.name ?? '',
         efFileName: efFile?.name ?? '',
+        hPeriodFrom: hDateRange?.minDate ?? null,
+        hPeriodTo: hDateRange?.maxDate ?? null,
+        efPeriodFrom: efDateRange?.minDate ?? null,
+        efPeriodTo: efDateRange?.maxDate ?? null,
         wards: wards.map((w) => ({
           wardCode: w.wardCode,
           wardName: w.wardName,

@@ -11,6 +11,7 @@ export type GenIIDailyScore = {
   wardCode: string;          // 病棟コード (H_COL.WARD_CODE)
   admissionDate: string;     // 入院年月日 (H_COL.ADMISSION_DATE)
   dischargeDate: string;     // 退院年月日 (H_COL.DISCHARGE_DATE)
+  daysFromAdmission: number; // 入院日からの経過日数 ((evalDate - admissionDate) + 1)
 
   // ========== TAR（判定対象フラグ） ==========
   tarFlag: number;           // TAR0010の値 (0〜5)

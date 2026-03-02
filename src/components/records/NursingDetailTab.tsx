@@ -16,6 +16,7 @@ const COLUMNS: { header: string; key: keyof GenIIDailyScore; group: string; isTo
   { header: 'データ識別番号', key: 'patientNo', group: 'info' },
   { header: '退院年月日', key: 'dischargeDate', group: 'info' },
   { header: '入院年月日', key: 'admissionDate', group: 'info' },
+  { header: '入院経過日数', key: 'daysFromAdmission', group: 'info' },
   { header: '実施年月日', key: 'evalDate', group: 'info' },
   { header: '判定対象フラグ', key: 'tarFlag', group: 'info' },
   // 得点・基準（サマリー）
@@ -267,7 +268,7 @@ export function NursingDetailTab({ wardNameMap }: { wardNameMap: Record<string, 
               {COLUMNS.map((col) => (
                 <th
                   key={col.header}
-                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border text-[10px] leading-tight ${col.isWardName ? 'min-w-[6rem]' : 'min-w-[3rem] max-w-[5.5rem]'} ${
+                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border text-[10px] leading-tight ${col.isWardName ? 'min-w-[6rem]' : 'min-w-[5rem]'} ${
                     col.isTotal ? 'bg-accent/5 text-accent font-bold' : ''
                   }`}
                   title={col.header}

@@ -1,7 +1,7 @@
 # 看護必要度管理システム ER図
 
-**Version:** 0.6  
-**作成日:** 2026年2月  
+**Version:** 0.7  
+**作成日:** 2026年3月  
 **ステータス:** ドラフト（開発中）
 
 ---
@@ -16,6 +16,8 @@
 | 0.4 | 2026年2月 | 入院料マスタを3テーブル構成に再設計（`judgment_pattern_master` + `admission_type_master` + `admission_type_criteria`）。`record` に `evaluation_method` を追加。`ward_setting` から `nursing_need_type` を削除 |
 | 0.5 | 2026年2月 | `ward_default_setting` テーブルを追加（localStorage永続化の論理モデル）。`ward_setting.ward_name` を必須に変更 |
 | 0.6 | 2026年3月 | データ系テーブルの注記を更新。中間データ（`GenIIDailyScore[]` 等）はオンメモリ処理のためER図の対象外であることを明記。未決事項を整理 |
+| 0.7 | 2026年3月 | `record` テーブルにアップロードファイルのデータ期間（`h_period_from`, `h_period_to`, `ef_period_from`, `ef_period_to`）および `status` の `draft` を追加 |
+| 0.8 | 2026年3月 | `admission_type_criteria` テーブルの `threshold_rate` を必要度Ⅰ・Ⅱに分け `threshold_rate_1`, `threshold_rate_2` に変更 |
 
 ---
 
@@ -49,7 +51,8 @@ erDiagram
         int admission_type_id FK
         int judgment_pattern_id FK
         string criteria_no "基準番号（基準①等）"
-        decimal threshold_rate "閾値 %（NULLable）"
+        decimal threshold_rate_1 "必要度Ⅰ 閾値 %（NULLable）"
+        decimal threshold_rate_2 "必要度Ⅱ 閾値 %（NULLable）"
     }
 
     %% リレーション: 判定パターン ↔ 入院料
@@ -126,7 +129,11 @@ erDiagram
         string evaluation_method "necessity_1 or necessity_2"
         string h_file_name "Hファイル名"
         string ef_file_name "EFファイル名"
-        string status "pending/processing/done/error"
+        date h_period_from "Hファイル データ期間開始"
+        date h_period_to "Hファイル データ期間終了"
+        date ef_period_from "EFファイル データ期間開始"
+        date ef_period_to "EFファイル データ期間終了"
+        string status "draft/pending/processing/done/error"
         timestamp created_at
         timestamp updated_at
     }

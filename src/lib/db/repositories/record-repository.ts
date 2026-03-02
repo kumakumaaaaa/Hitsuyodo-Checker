@@ -75,12 +75,19 @@ export const recordRepository = {
       evaluation_method: string;
       h_file_name: string | null;
       ef_file_name: string | null;
+      h_period_from: string | null;
+      h_period_to: string | null;
+      ef_period_from: string | null;
+      ef_period_to: string | null;
       status: string;
       created_at: string;
       updated_at: string;
     }>(
       `SELECT id, title, period_from::text, period_to::text, evaluation_method,
-              h_file_name, ef_file_name, status, created_at::text, updated_at::text
+              h_file_name, ef_file_name, 
+              h_period_from::text as h_period_from, h_period_to::text as h_period_to,
+              ef_period_from::text as ef_period_from, ef_period_to::text as ef_period_to,
+              status, created_at::text, updated_at::text
        FROM record WHERE id = $1`,
       [id]
     );
@@ -145,16 +152,20 @@ export const recordRepository = {
     evaluationMethod: string;
     hFileName: string;
     efFileName: string;
+    hPeriodFrom: string | null;
+    hPeriodTo: string | null;
+    efPeriodFrom: string | null;
+    efPeriodTo: string | null;
     wards: { wardCode: string; wardName: string; admissionTypeId: number | null }[];
   }): Promise<number> {
     const db = await getDB();
 
     // レコード本体を挿入
     const result = await db.query<{ id: number }>(
-      `INSERT INTO record (title, period_from, period_to, evaluation_method, h_file_name, ef_file_name, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'draft')
+      `INSERT INTO record (title, period_from, period_to, evaluation_method, h_file_name, ef_file_name, h_period_from, h_period_to, ef_period_from, ef_period_to, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'draft')
        RETURNING id`,
-      [data.title, data.periodFrom, data.periodTo, data.evaluationMethod, data.hFileName, data.efFileName]
+      [data.title, data.periodFrom, data.periodTo, data.evaluationMethod, data.hFileName, data.efFileName, data.hPeriodFrom, data.hPeriodTo, data.efPeriodFrom, data.efPeriodTo]
     );
     const recordId = result.rows[0].id;
 

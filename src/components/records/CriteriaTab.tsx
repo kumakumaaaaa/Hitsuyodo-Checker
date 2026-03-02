@@ -24,6 +24,7 @@ interface WardCriteriaResult {
     totalCount: number;
     qualifyingCount: number;
     rate: number; // 0〜100
+    thresholdRate: number | null;
   }[];
   totalCount: number; // 全基準共通の母数
 }
@@ -47,6 +48,7 @@ function meetsPattern(score: GenIIDailyScore, patternId: number): boolean {
 function computeWardResults(
   dailyScores: GenIIDailyScore[],
   wards: WardSettingDetail[],
+  evaluationMethod: string,
 ): WardCriteriaResult[] {
   // wardCode でグルーピング
   const scoresByWard = new Map<string, GenIIDailyScore[]>();
@@ -75,6 +77,7 @@ function computeWardResults(
         totalCount,
         qualifyingCount,
         rate: totalCount > 0 ? (qualifyingCount / totalCount) * 100 : 0,
+        thresholdRate: evaluationMethod === 'necessity_1' ? c.thresholdRate1 : c.thresholdRate2,
       };
     });
 
@@ -95,8 +98,8 @@ export function CriteriaTab({ record }: { record: RecordDetail }) {
 
   const wardResults = useMemo(() => {
     if (!dailyScores || dailyScores.length === 0) return [];
-    return computeWardResults(dailyScores, record.wards);
-  }, [dailyScores, record.wards]);
+    return computeWardResults(dailyScores, record.wards, record.evaluation_method);
+  }, [dailyScores, record.wards, record.evaluation_method]);
 
   // 全病棟合算
   const totalSummary = useMemo(() => {
@@ -201,11 +204,13 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-medium text-text-primary">{result.wardCode}</span>
-            <span className="font-medium text-text-primary">{result.wardName}</span>
+            <span className="font-bold text-base text-text-primary">{result.wardName}</span>
+            <span className="font-mono text-sm text-text-muted">({result.wardCode})</span>
           </div>
-          <div className="text-xs text-text-muted mt-0.5">
-            入院料: {result.admissionTypeName ?? '未設定'}
+          <div className="mt-1.5 inline-flex items-center">
+            <span className="text-xs font-bold text-accent bg-accent/10 border border-accent/20 px-2.5 py-1 rounded-md">
+              {result.admissionTypeName ?? '入院料未設定'}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-1 text-xs text-text-muted bg-background rounded-md px-2 py-1">
@@ -216,44 +221,83 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
 
       {/* 基準ごとの行 */}
       {hasCriteria ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {result.criteria.map((c) => (
-            <div
-              key={c.criteriaNo}
-              className="rounded-lg border border-border bg-background p-3"
-            >
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs font-bold text-accent bg-accent/10 rounded px-1.5 py-0.5">
-                  {c.criteriaNo}
-                </span>
-                <span className="text-xs text-text-muted truncate">
-                  {c.patternCode}: {c.patternLabel}
-                </span>
-              </div>
-              <div className="flex items-end justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <UserCheck size={12} className="text-accent" />
-                    該当: {c.qualifyingCount.toLocaleString()} 名
+        <div className={`grid gap-3 ${result.criteria.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+          {result.criteria.map((c) => {
+            const isWarning = c.thresholdRate !== null && c.rate < c.thresholdRate;
+            let requiredCount = null;
+            
+            if (c.thresholdRate !== null) {
+              requiredCount = Math.ceil((c.totalCount * c.thresholdRate) / 100);
+            }
+            
+            return (
+              <div
+                key={c.criteriaNo}
+                className={`rounded-lg border p-3 ${
+                  isWarning ? 'border-danger/30 bg-danger/5' : 'border-border bg-background'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs font-bold rounded px-1.5 py-0.5 ${
+                      isWarning ? 'text-danger bg-danger/10' : 'text-accent bg-accent/10'
+                    }`}>
+                      {c.criteriaNo}
+                    </span>
+                    <span className="text-xs text-text-muted truncate">
+                      {c.patternCode}: {c.patternLabel}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <Users size={12} />
-                    母数: {c.totalCount.toLocaleString()} 名
+                  {isWarning && (
+                    <span className="text-[10px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">
+                      基準未達
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-end justify-between">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <UserCheck size={12} className={isWarning ? 'text-danger' : 'text-accent'} />
+                      該当: {c.qualifyingCount.toLocaleString()} 名
+                      {requiredCount !== null && (
+                        <span className="text-[10px] text-text-muted ml-1 font-normal">
+                          (算定要件基準: {requiredCount.toLocaleString()} 名)
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <Users size={12} />
+                      母数: {c.totalCount.toLocaleString()} 名
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-2xl font-bold ${isWarning ? 'text-danger' : 'text-accent'}`}>
+                      {c.rate.toFixed(2)}%
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-accent">{c.rate.toFixed(2)}%</div>
+                {/* プログレスバー */}
+                <div className="mt-2 space-y-1">
+                  <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isWarning ? 'bg-danger' : 'bg-accent'
+                      }`}
+                      style={{ width: `${Math.min(c.rate, 100)}%` }}
+                    />
+                  </div>
+                  {c.thresholdRate !== null && (
+                    <div className="flex justify-between items-center text-xs mt-1.5">
+                      <span></span>
+                      <span className="font-bold text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20 shadow-sm">
+                        算定要件: {c.thresholdRate}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              {/* プログレスバー */}
-              <div className="mt-2 h-1.5 w-full rounded-full bg-border overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-accent transition-all duration-500"
-                  style={{ width: `${Math.min(c.rate, 100)}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-background p-4 text-center text-sm text-text-muted">

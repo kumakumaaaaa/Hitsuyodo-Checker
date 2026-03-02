@@ -83,6 +83,10 @@ export interface RecordDetail {
   evaluation_method: string;
   h_file_name: string | null;
   ef_file_name: string | null;
+  h_period_from: string | null;
+  h_period_to: string | null;
+  ef_period_from: string | null;
+  ef_period_to: string | null;
   status: RecordStatus;
   created_at: string;
   updated_at: string;
