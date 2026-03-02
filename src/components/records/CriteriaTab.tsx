@@ -48,6 +48,7 @@ function meetsPattern(score: GenIIDailyScore, patternId: number): boolean {
 function computeWardResults(
   dailyScores: GenIIDailyScore[],
   wards: WardSettingDetail[],
+  evaluationMethod: string,
 ): WardCriteriaResult[] {
   // wardCode でグルーピング
   const scoresByWard = new Map<string, GenIIDailyScore[]>();
@@ -76,7 +77,7 @@ function computeWardResults(
         totalCount,
         qualifyingCount,
         rate: totalCount > 0 ? (qualifyingCount / totalCount) * 100 : 0,
-        thresholdRate: c.thresholdRate,
+        thresholdRate: evaluationMethod === 'necessity_1' ? c.thresholdRate1 : c.thresholdRate2,
       };
     });
 
@@ -97,8 +98,8 @@ export function CriteriaTab({ record }: { record: RecordDetail }) {
 
   const wardResults = useMemo(() => {
     if (!dailyScores || dailyScores.length === 0) return [];
-    return computeWardResults(dailyScores, record.wards);
-  }, [dailyScores, record.wards]);
+    return computeWardResults(dailyScores, record.wards, record.evaluation_method);
+  }, [dailyScores, record.wards, record.evaluation_method]);
 
   // 全病棟合算
   const totalSummary = useMemo(() => {

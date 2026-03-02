@@ -63,26 +63,27 @@ export interface AdmissionTypeCriteria {
   admissionTypeId: number;
   judgmentPatternId: number;
   criteriaNo: string;         // "基準①", "基準②"
-  thresholdRate: number | null; // 閾値（%）— 将来用
+  thresholdRate1: number | null; // 必要度Ⅰの閾値（%）
+  thresholdRate2: number | null; // 必要度Ⅱの閾値（%）
 }
 
 export const ADMISSION_TYPE_CRITERIA: AdmissionTypeCriteria[] = [
 
   // 急性期一般入院料2: P2
-  { id: 3, admissionTypeId: 2, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 21 },
+  { id: 3, admissionTypeId: 2, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate1: 22, thresholdRate2: 21 },
   // 急性期一般入院料3: P2
-  { id: 4, admissionTypeId: 3, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 18 },
+  { id: 4, admissionTypeId: 3, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate1: 19, thresholdRate2: 18 },
   // 急性期一般入院料4: P2
-  { id: 5, admissionTypeId: 4, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 15 },
+  { id: 5, admissionTypeId: 4, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate1: 16, thresholdRate2: 15 },
   // 急性期一般入院料5: P2
-  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate: 11 },
+  { id: 6, admissionTypeId: 5, judgmentPatternId: 2, criteriaNo: '基準①', thresholdRate1: 12, thresholdRate2: 11 },
   // 急性期一般入院料6: 判定基準なし
   // 地域一般入院料1: 判定基準なし
   // 地域包括ケア病棟入院料1〜4: P3
-  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
-  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
-  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
-  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate: 8 },
+  { id: 7, admissionTypeId: 8, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate1: 10, thresholdRate2: 8 },
+  { id: 8, admissionTypeId: 9, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate1: 10, thresholdRate2: 8 },
+  { id: 9, admissionTypeId: 10, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate1: 10, thresholdRate2: 8 },
+  { id: 10, admissionTypeId: 11, judgmentPatternId: 3, criteriaNo: '基準①', thresholdRate1: 10, thresholdRate2: 8 },
 ];
 
 /* ===== ヘルパー関数 ===== */
