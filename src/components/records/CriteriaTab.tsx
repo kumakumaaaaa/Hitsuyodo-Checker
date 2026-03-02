@@ -260,8 +260,8 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                       <UserCheck size={12} className={isWarning ? 'text-danger' : 'text-accent'} />
                       該当: {c.qualifyingCount.toLocaleString()} 名
                       {requiredCount !== null && (
-                        <span className="text-[10px] font-bold text-accent bg-accent/5 px-1.5 py-0.5 rounded ml-1 border border-accent/20">
-                          要件: {requiredCount.toLocaleString()} 名
+                        <span className="text-[10px] text-text-muted ml-1 font-normal">
+                          (算定要件基準: {requiredCount.toLocaleString()} 名)
                         </span>
                       )}
                     </div>
