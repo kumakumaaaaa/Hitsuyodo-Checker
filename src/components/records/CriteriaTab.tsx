@@ -218,9 +218,20 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
 
       {/* 基準ごとの行 */}
       {hasCriteria ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 ${result.criteria.length > 1 ? 'sm:grid-cols-2' : ''}`}>
           {result.criteria.map((c) => {
             const isWarning = c.thresholdRate !== null && c.rate < c.thresholdRate;
+            let diffText = '';
+            
+            if (c.thresholdRate !== null) {
+              const requiredCount = Math.ceil((c.totalCount * c.thresholdRate) / 100);
+              const diffCount = c.qualifyingCount - requiredCount;
+              if (diffCount < 0) {
+                diffText = `あと ${Math.abs(diffCount).toLocaleString()} 名`;
+              } else {
+                diffText = `要件達成 (余裕 ${diffCount.toLocaleString()} 名)`;
+              }
+            }
             
             return (
               <div
@@ -274,9 +285,13 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
                     />
                   </div>
                   {c.thresholdRate !== null && (
-                    <div className="flex justify-between text-[10px] text-text-muted">
-                      <span></span>
-                      <span>算定要件: {c.thresholdRate}%</span>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className={isWarning ? 'text-danger font-bold' : 'text-text-secondary'}>
+                        {diffText}
+                      </span>
+                      <span className="text-text-muted">
+                        算定要件: {c.thresholdRate}%
+                      </span>
                     </div>
                   )}
                 </div>
