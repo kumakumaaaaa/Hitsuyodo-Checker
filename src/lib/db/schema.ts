@@ -64,6 +64,11 @@ export const schema = `
     admission_type_id INTEGER
   );
 
+  ALTER TABLE record ADD COLUMN IF NOT EXISTS h_period_from DATE;
+  ALTER TABLE record ADD COLUMN IF NOT EXISTS h_period_to DATE;
+  ALTER TABLE record ADD COLUMN IF NOT EXISTS ef_period_from DATE;
+  ALTER TABLE record ADD COLUMN IF NOT EXISTS ef_period_to DATE;
+
   CREATE TABLE IF NOT EXISTS ward_kasan_setting (
     id SERIAL PRIMARY KEY,
     ward_setting_id INTEGER NOT NULL REFERENCES ward_setting(id) ON DELETE CASCADE,

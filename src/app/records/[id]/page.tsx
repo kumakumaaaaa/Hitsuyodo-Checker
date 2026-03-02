@@ -229,8 +229,12 @@ export default function RecordDetailPage() {
 
         setRecord(data ? {
           ...data,
-          sessionHDateRange: isFromCurrentSession ? sessionHDateRange : null,
-          sessionEfDateRange: isFromCurrentSession ? sessionEfDateRange : null,
+          sessionHDateRange: (isFromCurrentSession && sessionHDateRange) 
+            ? sessionHDateRange 
+            : (data.h_period_from && data.h_period_to ? { minDate: data.h_period_from, maxDate: data.h_period_to } : null),
+          sessionEfDateRange: (isFromCurrentSession && sessionEfDateRange) 
+            ? sessionEfDateRange 
+            : (data.ef_period_from && data.ef_period_to ? { minDate: data.ef_period_from, maxDate: data.ef_period_to } : null),
         } : null);
       } catch (error) {
         console.error('レコードの読み込みに失敗しました:', error);
