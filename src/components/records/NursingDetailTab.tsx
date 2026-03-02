@@ -268,7 +268,7 @@ export function NursingDetailTab({ wardNameMap }: { wardNameMap: Record<string, 
               {COLUMNS.map((col) => (
                 <th
                   key={col.header}
-                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border text-[10px] leading-tight ${col.isWardName ? 'min-w-[6rem]' : 'min-w-[3rem] max-w-[5.5rem]'} ${
+                  className={`px-1.5 py-1.5 text-center font-medium text-text-muted border-r border-border text-[10px] leading-tight ${col.isWardName ? 'min-w-[6rem]' : 'min-w-[5rem]'} ${
                     col.isTotal ? 'bg-accent/5 text-accent font-bold' : ''
                   }`}
                   title={col.header}
