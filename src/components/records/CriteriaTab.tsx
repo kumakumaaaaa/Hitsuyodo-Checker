@@ -201,8 +201,8 @@ function WardCard({ result }: { result: WardCriteriaResult }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-medium text-text-primary">{result.wardCode}</span>
-            <span className="font-medium text-text-primary">{result.wardName}</span>
+            <span className="font-bold text-base text-text-primary">{result.wardName}</span>
+            <span className="font-mono text-sm text-text-muted">({result.wardCode})</span>
           </div>
           <div className="text-xs text-text-muted mt-0.5">
             入院料: {result.admissionTypeName ?? '未設定'}

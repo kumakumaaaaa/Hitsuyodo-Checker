@@ -30,6 +30,7 @@
 }
 
 :root {
+  color-scheme: light;
   --bg: #f8fafc;
   --fg: #1e293b;
   --surface: #ffffff;
